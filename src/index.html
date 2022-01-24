@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Web Component SPA Demo</title>
+
+    <script type="text/javascript">
+        // flash of unstyled content
+        // this uses older JS so as to work in IE
+        // it hides the 'You are using an unsupported browser' message long enough for demo-main to connect
+        var html = document.getElementsByTagName( 'html' )[ 0 ];
+        html.style.visibility = 'hidden';
+        document.addEventListener( 'DOMContentLoaded', function() { html.style.visibility = 'visible'; });
+    </script>
+    <!-- @todo global CSS -->
+</head>
+<body>
+    <demo-main>
+        <!-- Visible to no-script and old browsers; will be overridden when demo-main connects -->
+        You are using an unsupported browser.
+    </demo-main>
+    <script type="module">
+        import { initialize } from './service/main.mjs';
+        initialize();
+    </script>
+</body>
+</html>
