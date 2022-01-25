@@ -14,8 +14,9 @@ export function disconnectedCallback( element ) {
 export function attributeChangedCallback( element, name, previous, current ) {
     if ( previous !== current ) {
         if ( element.isConnected ) {
-            if ( typeof element[ name + 'AttributeChanged' ] === 'function' ) {
-                element[ name + 'AttributeChanged' ]( current, previous );
+            const property = toPropertyName( name );
+            if ( typeof element[ property + 'AttributeChanged' ] === 'function' ) {
+                element[ property + 'AttributeChanged' ]( current, previous );
             }
         } else {
             replayers.set( [ name, previous, current ], element );
@@ -45,6 +46,17 @@ export function removeListeners( element ) {
     } );
 }
 
+/** Finds the camelCase property name of a kebab-case or snake_case attribute name.
+ *
+ * @param attributeName {string} the kebab-case attribute name
+ * @returns {string} the camelCase property name
+ * @private
+ */
+export function toPropertyName( attributeName ) {
+    return attributeName
+        .replace( /[-_]./gi, x => x[ 1 ].toUpperCase() );
+}
+
 /** Triggers the attribute change handlers for attributes that were set before the element attached.
  *
  * @param element
@@ -59,4 +71,4 @@ function _replayAttributeChangedCallbacks( element ) {
     } );
 }
 
-export default { safeEventListener, removeListeners, connectedCallback, disconnectedCallback, attributeChangedCallback };
+export default { safeEventListener, removeListeners, connectedCallback, disconnectedCallback, attributeChangedCallback, toPropertyName };

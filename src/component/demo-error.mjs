@@ -6,7 +6,13 @@ const TEMPLATE = `
 <style>
 
 [aria-live] {
+    display: block;
     color: var(--demo-error-text-color, red);
+    padding: 40px;
+    border: 1px solid var(--demo-error-text-color, red);
+}
+[aria-live]:empty {
+    display: none;
 }
 
 </style>

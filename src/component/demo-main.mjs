@@ -1,6 +1,7 @@
 
 import { CUSTOM_EVENT, SERVER_LOCATION } from '../service/constants.mjs';
 import helper from '../service/helper.mjs';
+import DemoError from '../component/demo-error.mjs';
 
 const TEMPLATE = `
 <nav>
@@ -14,6 +15,7 @@ const TEMPLATE = `
         <li>Nature
             <ul>
                 <li><a href="#natural/astronomy">Astronomy</a></li>
+                <li><a href="#natural/oops">Dividing by Zero</a></li>
             </ul>
         </li>
     </ul>
@@ -97,7 +99,12 @@ class DemoMain extends HTMLElement {
     }
 
     displayError( e ) {
-        this.main.textContent = e.message;
+        while ( this.main.firstChild ) {
+            this.main.firstChild.remove();
+        }
+        const error = new DemoError();
+        error.message = e.message;
+        this.main.append( error );
     }
 }
 
