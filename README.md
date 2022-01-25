@@ -30,7 +30,15 @@ Demonstration of vanilla web components and their unit tests.
 3. Architectural standards
    - Use message-based architecture
    - Use independent components
+   - Use inheritance only when you are making small adjustments
 4. Two-way data-binding DOM manipulation
    - CSS custom properties
    - Custom HTML elements' attributeChangedCallback
    - CustomEvent and addEventListener
+
+## Gotchas
+- slot elements vs shadowRoot child elements vs non-shadow-root children
+- differing behavior before and after adding elements to the document
+- DOMParser-parsed script elements do not run
+- event bubbling through shadowRoots
+- browser differences in handling bubbled events, internal focus

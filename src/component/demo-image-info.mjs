@@ -71,7 +71,7 @@ class DemoImageInfo extends HTMLElement {
         return this.getAttribute( 'base' ) || '';
     }
     set base( base ) {
-        this.setAttribute( 'base', base );
+        this.setAttribute( 'base', base || '' );
     }
 
     get mediaType() {
@@ -82,10 +82,6 @@ class DemoImageInfo extends HTMLElement {
     }
     set media_type( type ) {
         this.mediaType = type;
-    }
-
-    get src() {
-        return this.base + this.url;
     }
 
     get copyright() {

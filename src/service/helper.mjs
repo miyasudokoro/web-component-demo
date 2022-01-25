@@ -57,6 +57,20 @@ export function toPropertyName( attributeName ) {
         .replace( /[-_]./gi, x => x[ 1 ].toUpperCase() );
 }
 
+/** Passes attributes from a custom element to another element.
+ *
+ * @param source {HTMLElement}
+ * @param destination {HTMLElement}
+ * @param [attributes] {Array<string>} default: source.constructor.observedAttributes
+ */
+export function assignAttributes( source, destination, attributes ) {
+    attributes = attributes || source.constructor.observedAttributes;
+    attributes.forEach( attr => {
+        const value = source.getAttribute( attr );
+        value && destination.setAttribute( attr, value );
+    } );
+}
+
 /** Triggers the attribute change handlers for attributes that were set before the element attached.
  *
  * @param element
@@ -71,4 +85,4 @@ function _replayAttributeChangedCallbacks( element ) {
     } );
 }
 
-export default { safeEventListener, removeListeners, connectedCallback, disconnectedCallback, attributeChangedCallback, toPropertyName };
+export default { safeEventListener, removeListeners, connectedCallback, disconnectedCallback, attributeChangedCallback, toPropertyName, assignAttributes };
