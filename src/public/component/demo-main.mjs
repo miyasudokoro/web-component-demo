@@ -47,7 +47,7 @@ class DemoMain extends HTMLElement {
         // make sure the event listener will be removed later to avoid zombie behavior and memory leaks
         helper.safeEventListener( this, document, CUSTOM_EVENT.VIEW_CHANGE, e => {
             const { viewInfo } = e.detail;
-            this.view = viewInfo.join( '/' ) + '.htm';
+            this.view = viewInfo.join( '/' );
         } );
         // now that the element has connected, changed attributes can process
         helper.connectedCallback( this );
@@ -71,7 +71,9 @@ class DemoMain extends HTMLElement {
     viewAttributeChanged( view ) {
         // example: fetching HTML from a server that might respond 404, 403, 401, etc.
         const path = [ SERVER_LOCATION, view ].join( '/' );
-        return fetch( path )
+        return fetch( path, {
+            // headers: { Authorization: 'Bearer my-fake-token' }
+        } )
             .then( response => response.ok ? response.text() : Promise.reject( new Error( response.status + ' ' + response.statusText ) ) )
             .then( html => {
                 while ( this.main.firstChild ) {

@@ -1,0 +1,13 @@
+{
+    "scripts": {
+        "start:localhost": "node src/Server.js --port 5000 --host localhost",
+        "start": "node src/Server.js --port 443 --host mydomainnamehere.com",
+        "makeTestCertificates": "mkcert create-ca && mkcert create-cert --key ./src/certs/ca.key --cert ./src/certs/ca.crt"
+    },
+    "devDependencies": {
+        "mkcert": "^1.5.0"
+    },
+    "dependencies": {
+        "mime-types": "^2.1.34"
+    }
+}
