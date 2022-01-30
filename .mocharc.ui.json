@@ -1,4 +1,0 @@
-{
-    "spec": "test/ui/**.mjs",
-    "recursive": true
-}
