@@ -2,8 +2,6 @@
 const https = require( 'https' );
 const fs = require( 'fs' );
 const path = require( 'path' );
-
-// the only third-party dependency...
 const mime = require( 'mime-types' );
 
 const STATUS_TEXT = {
@@ -21,38 +19,53 @@ const staticFileCache = new Map();
 class Server {
     /** Constructor */
     constructor( host = 'localhost', port = '4000' ) {
-        this.createLogFileStream();
-        this.createServer( host, port );
+        this.initialize( host, port );
     }
 
-    /** Auto-starts a Server instance if the arguments support it.
+    /** Auto-starts a Server instance if the command-line arguments support it.
      *
-     * @param argv {Array<string>} process.argv
      * @returns {Server}
      */
-    static autoStart( argv = process.argv ) {
-        if ( argv.find( arg => arg.includes( 'Server.js' ) ) ) {
-            return new Server( this.extractArg( 'host' ), this.extractArg( 'port' ) );
+    static autoStart() {
+        if ( process.argv.find( arg => arg.includes( 'Server.js' ) ) ) {
+            return new Server( Server.extractArg( 'host' ), Server.extractArg( 'port' ) );
         }
     }
 
     /** Extracts an argument from process.argv.
+     * Note: this is a super basic implementation.
      *
      * @param name {string} name of argument
-     * @param [argv=process.argv] {Array<string>} process.argv
      */
-    static extractArg( name, argv = process.argv ) {
+    static extractArg( name ) {
+        const argv = process.argv;
         const index = argv.findIndex( arg => arg === '--' + name );
         if ( index > -1 ) {
+            if ( !argv[ index + 1 ] || argv[ index + 1 ].startsWith( '--' ) ) {
+                // boolean
+                return true;
+            }
+            // string
             return argv[ index + 1 ];
         }
     }
 
     /** Clears the server-side cache.
-     *
+     * Note: we will use this in unit testing to restore original state
      */
     static reset() {
         staticFileCache.clear();
+    }
+
+    /** Initializes the server instance.
+     *
+     * @param host {string} the name of the host
+     * @param port {string} the port number to use
+     */
+    initialize( host, port ) {
+        this.createLogFileStream();
+        this.createProcessListeners();
+        this.createServer( host, port );
     }
 
     /** Creates the log file stream.
@@ -64,7 +77,12 @@ class Server {
             flags: 'a'
         } );
         this.logger.on( 'error', e => console.error( e ) );
+    }
 
+    /** Creates listeners for the process events.
+     *
+     */
+    createProcessListeners() {
         process.on( 'exit', code => {
             this.log( 'Exit: ' + code );
             this.logger.end();
@@ -82,18 +100,18 @@ class Server {
     /** Creates the server instance.
      *
      * @param host {string} the name of the host
-     * @param port {number} the port number to use
+     * @param port {string} the port number to use
      */
     createServer( host, port ) {
-        port = parseInt( port );
+        const portNumber = parseInt( port );
         const options = {
             key: fs.readFileSync( path.join( __dirname, 'certs', 'ca.key' ) ),
             cert: fs.readFileSync( path.join( __dirname, 'certs', 'ca.crt' ) )
         };
-        this.server = https.createServer( options, ( request, response ) => this.processRequest( request, response ) );
-
-        this.server.listen( port, host, () => {
-            this.log( `Server is running on https://${host}:${port}` );
+        const server = https.createServer( options, ( request, response ) => this.processRequest( request, response ) );
+        this.origin = `https://${ host }:${ port }`;
+        server.listen( portNumber, host, () => {
+            this.log( `Server is running on ${this.origin}` );
         } );
     }
 
@@ -105,7 +123,7 @@ class Server {
     processRequest( request, response ) {
         if ( request.method === 'GET' ) {
             const pathName = this.getPathName( request );
-            return this.serveFile( path.join( __dirname, 'public', pathName ), response )
+            return this.servePublicFile( pathName, response )
                 .catch( () => this.servePrivateFile( pathName, response, request ) )
                 .catch( e => this.serveError( pathName, response, e ) );
         }
@@ -130,14 +148,25 @@ class Server {
     /** Serves a file.
      *
      * @param fullPathName {string} the relative path
-     * @param response {ServerResponse} the response instance
      * @returns {Promise}
+     * @private
      */
-    serveFile( fullPathName, response ) {
+    _getFile( fullPathName ) {
         if ( !staticFileCache.has( fullPathName ) ) {
             staticFileCache.set( fullPathName, fs.promises.readFile( fullPathName ) );
         }
-        return staticFileCache.get( fullPathName )
+        return staticFileCache.get( fullPathName );
+    }
+
+    /** Serves a file that is protected by user authorization.
+     *
+     * @param pathName {string} the requested path name
+     * @param response {ServerResponse} the response
+     * @returns {Promise}
+     */
+    servePublicFile( pathName, response ) {
+        const fullPathName = path.join( __dirname, 'public', pathName );
+        return this._getFile( fullPathName )
             .then( data => this.respond( response, 200, fullPathName, data ) );
     }
 
@@ -150,8 +179,12 @@ class Server {
      */
     servePrivateFile( pathName, response, request ) {
         const auth = request.headers.authorization;
-        return this.checkTokenWithAuthorizationProvider( auth )
-            .then( () => this.serveFile( path.join( __dirname, 'private', pathName ), response ) );
+        const fullPathName = path.join( __dirname, 'private', pathName );
+        return this._getFile( fullPathName )
+            .then( data => {
+                return this.checkTokenWithAuthorizationProvider( auth )
+                    .then( () => this.respond( response, 200, fullPathName, data ) );
+            } );
     }
 
     /** Serves an error response.
@@ -176,7 +209,7 @@ class Server {
      * @returns {Promise} resolves if the user is authorized
      */
     checkTokenWithAuthorizationProvider( authorization ) {
-        // note: obviously, this is not a real authorization provider :)
+        // obviously, this is not a real authorization provider :)
         return new Promise( ( resolve, reject ) => {
             if ( authorization ) {
                 const [ , token ] = authorization.split( ' ' );
@@ -215,29 +248,58 @@ class Server {
      */
     _writeLog( ...args ) {
         if ( this.logger.writable ) {
-            args.forEach( arg => this.logger.write( JSON.stringify( arg, null, 2 ) + '\n' ) );
+            args.forEach( arg => {
+                if ( arg instanceof Error ) {
+                    this.logger.write( arg.stack + '\n' );
+                } else if ( arg && typeof arg === 'object' ) {
+                    this.logger.write( JSON.stringify( arg, null, 2 ) + '\n' );
+                } else {
+                    this.logger.write( arg + '\n' );
+                }
+            } );
         }
+    }
+
+    /** Generates appropriate headers.
+     *
+     * @param status {number} the status code
+     * @param fullPathName {string} the file path
+     * @param [data] {Buffer} the data to write
+     * @returns {object} record of headers
+     */
+    generateHeaders( status, fullPathName, data ) {
+        const headers = {
+            'Access-Control-Allow-Origin': this.origin
+        };
+        if ( data ) {
+            const type = mime.lookup( path.basename( fullPathName ) );
+            headers[ 'Content-Type' ] = type;
+        }
+
+        let cacheControl;
+        if ( status > 299 || fullPathName.startsWith( '/private' ) ) {
+            // prevent caching of errors or files that change when authorization changes
+            cacheControl = 'no-store';
+        } else {
+            // cache other files normally
+            cacheControl = 'Max-Age=500000, must-revalidate';
+        }
+        headers[ 'Cache-Control' ] = cacheControl;
+        return headers;
     }
 
     /** Responds to a request.
      *
      * @param response {ServerResponse} the http response
      * @param status {number} the status code
-     * @param pathName {string} the file path
+     * @param fullPathName {string} the file path
      * @param [data] {Buffer} the data to write
      */
-    respond( response, status, pathName, data ) {
-        const headers = {
-            'Access-Control-Allow-Origin': '*' // CORS allowed
-        };
-        if ( data ) {
-            headers[ 'Content-Type' ] = mime.lookup( path.basename( pathName ) );
-            headers[ 'Cache-Control' ] = 'Max-Age=500000';
-        }
+    respond( response, status, fullPathName, data ) {
         if ( status > 299 ) {
-            this.log( status, pathName );
-            headers[ 'Cache-Control' ] = 'no-store';
+            this.log( status, fullPathName );
         }
+        const headers = this.generateHeaders( status, fullPathName, data );
         response.writeHead( status, STATUS_TEXT[ status ] || 'Unknown', headers );
         data && response.write( data, 'utf8' );
         response.end();
