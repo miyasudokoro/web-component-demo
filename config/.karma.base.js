@@ -4,6 +4,12 @@ const dependencies = [
     './node_modules/dirty-chai/lib/dirty-chai.js',
     {
         pattern: './test/ui.util.mjs',
+        type: 'module',
+        served: true,
+        included: false
+    },
+    {
+        pattern: './test/ui.setup.mjs',
         type: 'module'
     }
 ];
@@ -11,10 +17,10 @@ const dependencies = [
 // sources: the files you are testing
 const sources = [
     {
-        "pattern": "src/**/*.mjs",
-        "type": "module",
-        "served": true,
-        "included": false
+        pattern: 'src/**/*.mjs',
+        type: 'module',
+        served: true,
+        included: false
     }
 ];
 
@@ -55,8 +61,9 @@ const settings = {
     reporters: [ 'mocha' ],
 
     proxies: {
-        ...proxies,
-        '/node_modules/': '/base/node_modules/'
+        '/node_modules/': '/base/node_modules/',
+        '/test/': '/base/test/',
+        ...proxies
     },
 
     files: dependencies
@@ -78,10 +85,15 @@ const settings = {
         'karma-mocha-reporter'
     ],
 
-    timeout: 8000,
+    // this is the Karma timeout in milliseconds
+    timeout: 2000,
 
     client: {
-        requireJsShowNoTimestampsError: false
+        requireJsShowNoTimestampsError: false,
+        mocha: {
+            // set this to something equal to or larger than the Karma timeout
+            timeout: 3000
+        }
     },
 
     colors: false

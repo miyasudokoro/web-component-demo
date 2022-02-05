@@ -54,7 +54,7 @@ class DemoMultiImage extends HTMLElement {
 
         // you can listen to internal events on shadowRoot
         // because it is a DocumentFragment, events will not all bubble normally to `this`
-        helper.safeEventListener( this, this.shadowRoot, 'click', e => {
+        helper.safeEventListener( this.shadowRoot, 'click', e => {
             if ( e.target.name === 'add' ) {
                 this.addNewImage();
             } else if ( e.target.name === 'remove' ) {
@@ -77,7 +77,7 @@ class DemoMultiImage extends HTMLElement {
             .cloneNode( true ); // clone that wrapper and all children
 
         const info = clone.querySelector( DemoImageInfo.tag );
-        helper.assignAttributes( this, info );
+        helper.copyAttributes( this, info );
         // note this weirdness: it's not really a DemoImageInfo until it's appended
         console.assert( !( info instanceof DemoImageInfo ) );
         this.shadowRoot.append( clone );

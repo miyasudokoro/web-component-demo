@@ -1,98 +1,98 @@
 
-let karmaLoad;
-
-window.fail = window.chai.expect.fail;
-window.originalSetTimeout = window.setTimeout;
-
 /**
- * @exports karmaDebug
- * @description Karma configuration debugging tools
+ * @module ui.util
+ * @description Unit test utility functions.
  */
-export const karmaDebug = {
-    /** Lists files that Karma loaded. Use this if you are having trouble configuring Karma files or proxies. */
-    listFiles() {
-        console.log( 'karmaDebug:listFiles' );
-        for ( const file in window.__karma__.files ) {
-            console.log( file );
-        }
+
+/** The default timeout milliseconds.
+ * @const
+ * @type {number}
+ * @default 100
+ */
+export const TIMEOUT_MS = 100;
+
+/** Lists files that Karma loaded.
+ * Use this if you are having trouble configuring Karma files or proxies.
+ */
+export function listFiles() {
+    console.log( 'List of files loaded by Karma:' );
+    for ( const file in window.__karma__.files ) {
+        console.log( file );
     }
-};
+}
 
-before( function() {
-    // record the initial state of the document body
-    karmaLoad = new Set( document.body.children );
-    // tests do not run reliably if the browser is throttling the tab/window because it's inactive
-    if ( document.visibilityState === 'hidden' ) {
-        fail( 'Aborted: Document visibility state is hidden. Make Karma window active before running tests.' );
-    }
-} );
-
-// after each test ...
-afterEach( function() {
-    // restore the sinon contexts to their initial state
-    sinon.restore();
-    // restore the document body to its initial state
-    const children = document.body.children;
-    for ( let i = children.length; i--; ) {
-        if ( !karmaLoad.has( children[ i ] ) ) {
-            document.body.removeChild( children[ i ] );
-        }
-    }
-} );
-
-// canary unit test: proves your test setup works
-describe( 'canary', () => {
-    it( 'adds 2 + 2', () => {
-        expect( 2 + 2 ).to.equal( 4 );
-    } );
-
-    it( 'expects promises', () => {
-        const promise = new Promise( ( resolve, _reject ) => {
-            setTimeout( () => resolve( 'abc' ) );
-        } );
-        return promise
-            .then( result => {
-                expect( result ).to.equal( 'abc' );
+/** Resolves when the attribute changes on the element. Rejects if the change does not occur within the timeout.
+ *
+ * @param element {HTMLElement} the element with an attribute that might change
+ * @param attribute {string} the attribute name
+ * @param [ms=TIMEOUT_MS] {number} the timeout in milliseconds
+ */
+export function awaitAttributeChange( element, attribute, ms = TIMEOUT_MS ) {
+    const promise = new Promise( resolve => {
+        const observer = new MutationObserver( mutations => {
+            mutations.forEach( mutation => {
+                if ( mutation.type === 'attributes' && mutation.attributeName === attribute ) {
+                    const value = mutation.target.getAttribute( mutation.attributeName );
+                    observer.disconnect();
+                    resolve( value );
+                }
             } );
+        } );
+        observer.observe( element, { attributes: true } );
     } );
 
-    const stubby = {
-        method: () => {
-            return true;
-        }
-    };
+    return timeOutPromise( promise, `${attribute} did not change in ${ms}ms`, ms );
+}
 
-    describe( 'sinon', () => {
-        it( 'stubs', () => {
-            sinon.stub( stubby, 'method' ).callsFake( () => {
-                return false;
-            } );
-            expect( stubby.method() ).to.equal( false );
-            expect( stubby.method ).to.have.been.called();
-        } );
-    } );
-
-    describe( 'correct setup', () => {
-        it( 'resets stubs automatically', () => {
-            expect( stubby.method() ).to.equal( true );
-        } );
-
-        it( 'puts element in body', () => {
-            const fix = document.createElement( 'span' );
-            fix.id = 'myfix';
-
-            try {
-                document.body.appendChild( fix );
-
-                const found = document.getElementById( 'myfix' );
-                expect( found ).to.equal( fix );
-            } catch ( e ) {
-                fail( e );
+/** Resolves when the text content changes on the element, whitespaces ignored. Rejects if the change does not occur within the timeout.
+ *
+ * @param element {HTMLElement} the element with an attribute that might change
+ * @param [ms=TIMEOUT_MS] {number} the timeout in milliseconds
+ */
+export function awaitTextChange( element, ms = TIMEOUT_MS ) {
+    const original = getNormalizedWhitespaceTextContent( element );
+    const promise = new Promise( resolve => {
+        const observer = new MutationObserver( () => {
+            const currentObservation = getNormalizedWhitespaceTextContent( element );
+            if ( original !== currentObservation ) {
+                observer.disconnect();
+                resolve( currentObservation );
             }
         } );
 
-        it( 'removes element from body automatically', () => {
-            expect( document.getElementById( 'myfix' ) ).to.be.null();
-        } );
+        const options = { characterData: true, attributes: true, childList: true, subtree: true };
+        observer.observe( element, options );
     } );
-} );
+
+    return timeOutPromise( promise, `Text content did not change in ${ms}ms`, ms );
+}
+
+/** Times out a promise that might hang so your tests can fail faster.
+ *
+ * @param promise {Promise} the promise that might hang
+ * @param [timeoutMessage] {string} a message to reject with
+ * @param [ms=TIMEOUT_MS] {number} the timeout in milliseconds
+ * @returns {Promise}
+ */
+export function timeOutPromise( promise, timeoutMessage, ms = TIMEOUT_MS ) {
+    timeoutMessage = timeoutMessage || `Promise timed out at ${ms}ms`;
+    const timeout = new Promise( ( _, reject ) => {
+        setTimeout(
+            () => reject( timeoutMessage ),
+            ms
+        );
+    } );
+
+    return Promise.race( [ timeout, promise ] );
+}
+
+/** Returns the text content, trimmed and whitespaces normalized.
+ *
+ * @param element {Element} element
+ * @returns {string} the text content
+ */
+export function getNormalizedWhitespaceTextContent( element ) {
+    return element.textContent
+        .trim()
+        .replace( /\s+/gm, ' ' );
+}

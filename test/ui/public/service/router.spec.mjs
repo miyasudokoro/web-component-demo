@@ -11,6 +11,21 @@ describe( 'service/router', () => {
         docListener && document.removeEventListener( CUSTOM_EVENT.VIEW_CHANGE, docListener );
     } );
 
+    it( 'initializes without the mock used for the rest of these tests', () => {
+        docListener = sinon.fake();
+        document.addEventListener( CUSTOM_EVENT.VIEW_CHANGE, docListener );
+
+        // we can't be sure what is in this hash
+        const hash = window.location.hash;
+        const expecting = hash ? hash.split( '/' ) : [ DEFAULT_VIEW ];
+
+        router.initialize();
+
+        expect( docListener.callCount ).to.equal( 1 );
+        const e = docListener.lastArg;
+        expect( e.detail.viewInfo ).to.deep.equal( expecting );
+    } );
+
     it( 'sends event on initial load without hash', () => {
         docListener = sinon.fake();
         document.addEventListener( CUSTOM_EVENT.VIEW_CHANGE, docListener );
@@ -62,6 +77,23 @@ describe( 'service/router', () => {
 
             expect( docListener.callCount ).to.equal( 1 );
             const e = docListener.lastArg;
+            expect( e.detail.viewInfo ).to.deep.equal( [ 'animal', 'cats' ] );
+        } );
+
+        it( 'prevents accidental reinitialization', () => {
+            const differentLocationMock = new URL( 'https://oops.com' );
+
+            // if this were allowed to be called twice...
+            router.initialize( differentLocationMock );
+
+            const event = new PopStateEvent( 'popstate' );
+            locationMock.hash = '#animal/cats';
+            window.dispatchEvent( event );
+
+            // ... we would have registered two listeners on hash change and sent the event twice
+            expect( docListener.callCount ).to.equal( 1 );
+            const e = docListener.lastArg;
+            // ... and the router would have cared about the second location mock, not the first
             expect( e.detail.viewInfo ).to.deep.equal( [ 'animal', 'cats' ] );
         } );
     } );

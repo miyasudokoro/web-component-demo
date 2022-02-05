@@ -21,9 +21,12 @@ export function initialize( loc = location ) {
  *
  */
 export function reset() {
+    window.removeEventListener( 'popstate', _onHashChange );
+    window.removeEventListener( 'hashchange', _onHashChange );
     observer && observer.disconnect();
     observer = undefined;
     _location = undefined;
+    lastSent = undefined;
 }
 
 /** Creates a navigation observer that allows navigation via URL hash (fragment).
@@ -47,7 +50,7 @@ function _createNavigationObserver() {
  * @private
  */
 function _onHashChange() {
-    const hash = ( _location || location ).hash.slice( 1 );
+    const hash = _location.hash.slice( 1 );
     const viewInfo = hash ? hash.split( '/' ) : [ DEFAULT_VIEW ];
 
     // Example: you can communicate arbitrary global events on document

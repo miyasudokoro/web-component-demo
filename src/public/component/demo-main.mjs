@@ -44,11 +44,12 @@ class DemoMain extends HTMLElement {
     connectedCallback() {
         this.innerHTML = TEMPLATE;
         this.main = this.querySelector( 'main' );
-        // make sure the event listener will be removed later to avoid zombie behavior and memory leaks
-        helper.safeEventListener( this, document, CUSTOM_EVENT.VIEW_CHANGE, e => {
+        const remover = helper.safeEventListener( document, CUSTOM_EVENT.VIEW_CHANGE, e => {
             const { viewInfo } = e.detail;
             this.view = viewInfo.join( '/' );
         } );
+        // make sure the event listener will be removed later to avoid zombie behavior and memory leaks
+        helper.addRemoveListener( this, remover );
         // now that the element has connected, changed attributes can process
         helper.connectedCallback( this );
     }

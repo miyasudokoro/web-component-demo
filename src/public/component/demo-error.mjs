@@ -18,7 +18,12 @@ const TEMPLATE = `
 <aside aria-live></aside>
 `;
 
+/** @class DemoError
+ * @extends HTMLElement
+ * @description Displays error information
+ */
 class DemoError extends HTMLElement {
+    /** Constructor */
     constructor() {
         super();
         // here is the shadow root
@@ -28,35 +33,50 @@ class DemoError extends HTMLElement {
         } );
     }
 
+    /** @type string */
     static get tag() {
         return 'demo-error';
     }
 
+    /** @type Array<string> */
     static get observedAttributes() {
         return [ 'message' ];
     }
 
+    /** @type string */
     get message() {
         return this.getAttribute( 'message' );
     }
+    // note: using @alias allows linter enforcement of JSDoc but prevents double listing of the property
+    /** @alias DemoError.prototype~message */
     set message( message ) {
         this.setAttribute( 'message', message );
     }
 
+    /** @override */
     connectedCallback() {
         this.shadowRoot.innerHTML = TEMPLATE;
+
+        // "aria-live" means the screen reader will announce the message when the text content changes
         this.live = this.shadowRoot.querySelector( '[aria-live]' );
+
         helper.connectedCallback( this );
     }
 
+    /** @override */
     disconnectedCallback() {
         helper.disconnectedCallback( this );
     }
 
+    /** @override */
     attributeChangedCallback( name, previous, current ) {
         helper.attributeChangedCallback( this, name, previous, current );
     }
 
+    /** Handles the message attribute changing.
+     *
+     * @param message
+     */
     messageAttributeChanged( message ) {
         this.live.textContent = message;
     }

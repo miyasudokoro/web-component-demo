@@ -1,5 +1,6 @@
 // get the shared globals; we would include this at the top of every spec file
-require( '../node.util.js' );
+// so that the spec files can run in any order or even individually
+require( '../node.setup.js' );
 
 // get dependencies we will need for the test cases
 const rewire = require( 'rewire' );
