@@ -9,6 +9,7 @@ import utils from './utils.mjs';
 problems that might come from setting the variables directly on the objects. */
 const removers = new Map();
 const replayers = new Map();
+const attributes = new WeakMap(); // using a weak map so unused values will be garbage collected
 
 /** Handles the element connecting to the DOM.
  *
@@ -43,6 +44,11 @@ export function attributeChangedCallback( element, name, previous, current ) {
         if ( element.isConnected ) {
             const property = utils.toCamelCase( name );
             if ( typeof element[ property + 'AttributeChanged' ] === 'function' ) {
+                const privateVersions = _getPrivateAttributeVersions( element, name );
+                if ( privateVersions ) {
+                    current = privateVersions[ privateVersions.length - 1 ];
+                    previous = privateVersions[ privateVersions.length - 2 ];
+                }
                 element[ property + 'AttributeChanged' ]( current, previous );
             }
         } else {
@@ -95,7 +101,7 @@ export function callRemoveListeners( element ) {
     }
 }
 
-/** Copies attributes from one element to another. Assumes attributes should be in kabob-case.
+/** Copies attributes from one element to another. Assumes attributes should be set in kabob-case.
  *
  * @param source {HTMLElement} the source of attribute values
  * @param destination {HTMLElement} the element to set the values on
@@ -105,9 +111,56 @@ export function copyAttributes( source, destination, attributes ) {
     attributes = attributes || source.constructor.observedAttributes || [];
     attributes.forEach( attr => {
         const name = utils.toKabobCase( attr );
-        const value = source.getAttribute( name );
+        const value = getPrivateAttribute( source, name ) || source.getAttribute( name );
         value && destination.setAttribute( name, value );
     } );
+}
+
+/** Saves any type as an "attribute" of an element.
+ *
+ * Note: Element attributes must be strings. For objects or long/unsafe strings, we can store them in a private map.
+ * We store a version number as the element attribute value so change listeners will trigger.
+ *
+ * @param element {HTMLElement} the element
+ * @param attributeName {string} the attribute name
+ * @param value {any} the value to store as a private attribute, or null/undefined to remove
+ */
+export function setPrivateAttribute( element, attributeName, value ) {
+    const elementAttributes = attributes.get( element ) || {};
+    if ( typeof value === 'undefined' || value === null ) {
+        elementAttributes[ attributeName ] = undefined;
+        element.removeAttribute( attributeName );
+    } else {
+        const versions = elementAttributes[ attributeName ];
+        versions.push( value );
+        attributes.set( element, elementAttributes );
+        element.setAttribute( attributeName, String( versions.length ) );
+    }
+}
+
+/** Deserializes a string that was previously serialized.
+ *
+ * @param element {HTMLElement} the element
+ * @param attributeName {string} the attribute name
+ * @returns {any|null} the stored private attribute
+ */
+export function getPrivateAttribute( element, attributeName ) {
+    const versions = _getPrivateAttributeVersions( element, attributeName );
+    return ( versions && versions[ versions.length - 1 ] ) || null;
+}
+
+/** Gets private attribute versions of an element.
+ *
+ * @param element {HTMLElement} the element
+ * @param attributeName {string} the attribute name
+ * @returns {Array<any>} the versions of the private attribute
+ * @private
+ */
+function _getPrivateAttributeVersions( element, attributeName ) {
+    const elementAttributes = attributes.get( element );
+    if ( elementAttributes ) {
+        return elementAttributes[ attributeName ];
+    }
 }
 
 /** Triggers the attribute change handlers for attributes that were set before the element attached.

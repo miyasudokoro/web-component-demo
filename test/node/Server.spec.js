@@ -1,5 +1,5 @@
 // get the shared globals; we would include this at the top of every spec file
-// so that the spec files can run in any order or even individually
+// so that the spec files can run individually
 require( '../node.setup.js' );
 
 // get dependencies we will need for the test cases
@@ -132,7 +132,9 @@ describe( 'Server.js', () => {
                 // here is how you can extract anonymous callback functions to test them
                 // first, get the Sinon fake calls that would have registered the listeners for "process.on"
                 const calls = processMock.on.args;
-                // second, get the callbacks out ... here, I am making an object { event: callback }
+                // second, get the callbacks out ...
+                // here, I am making an object eventListeners with structure { event: callback }
+                // now I can call each of the anonymous callbacks using this object
                 eventListeners = calls.reduce( ( obj, [ event, callback ] ) => {
                     obj[ event ] = callback;
                     return obj;

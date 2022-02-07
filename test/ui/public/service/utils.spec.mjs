@@ -70,4 +70,20 @@ describe( 'service/utils', () => {
             expect( utils.toKabobCase( 'attribute' ) ).to.equal( 'attribute' );
         } );
     } );
+
+    describe( 'normalize date string', () => {
+        it( 'normalizes YYYY/MM/DD', () => {
+            expect( utils.normalizeDateString( '2014/12/10' ) ).to.equal( '2014-12-10' );
+        } );
+
+        it( 'normalizes YYYY-MM-DD', () => {
+            expect( utils.normalizeDateString( '2014-12-10' ) ).to.equal( '2014-12-10' );
+        } );
+
+        it( 'normalizes undefined as today', () => {
+            const today = new Date().toISOString();
+            const normalized = utils.normalizeDateString();
+            expect( normalized ).to.equal( utils.normalizeDateString( today ) );
+        } );
+    } );
 } );

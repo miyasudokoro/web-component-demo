@@ -29,12 +29,16 @@ export function listFiles() {
  */
 export function awaitAttributeChange( element, attribute, ms = TIMEOUT_MS ) {
     const promise = new Promise( resolve => {
+        const original = element.getAttribute( attribute );
         const observer = new MutationObserver( mutations => {
             mutations.forEach( mutation => {
                 if ( mutation.type === 'attributes' && mutation.attributeName === attribute ) {
-                    const value = mutation.target.getAttribute( mutation.attributeName );
-                    observer.disconnect();
-                    resolve( value );
+                    // note: if no value, element has null but mutation.value has undefined
+                    const value = element.getAttribute( attribute );
+                    if ( value !== original ) {
+                        observer.disconnect();
+                        resolve( value );
+                    }
                 }
             } );
         } );
@@ -50,8 +54,8 @@ export function awaitAttributeChange( element, attribute, ms = TIMEOUT_MS ) {
  * @param [ms=TIMEOUT_MS] {number} the timeout in milliseconds
  */
 export function awaitTextChange( element, ms = TIMEOUT_MS ) {
-    const original = getNormalizedWhitespaceTextContent( element );
     const promise = new Promise( resolve => {
+        const original = getNormalizedWhitespaceTextContent( element );
         const observer = new MutationObserver( () => {
             const currentObservation = getNormalizedWhitespaceTextContent( element );
             if ( original !== currentObservation ) {

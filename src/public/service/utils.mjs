@@ -32,4 +32,19 @@ export function toKabobCase( str ) {
         .replace( /[A-Z]/g, x => '-' + x.toLowerCase() );
 }
 
-export default { toCamelCase, toKabobCase };
+/** Normalize a possibly-invalid date string to a valid structure of YYYY-MM-DD.
+ *
+ * @param [dateString] {string} a date string, default today
+ * @returns {string} normalized date string in structure YYYY-MM-DD, or empty string for invalid date
+ */
+export function normalizeDateString( dateString ) {
+    // strangely, undefined and empty are not the same thing to the Date constructor
+    const date = dateString ? new Date( dateString ) : new Date();
+    // isNaN implicitly casts to Number
+    if ( !isNaN( date ) ) {
+        return date.toISOString().split( 'T' )[ 0 ];
+    }
+    return '';
+}
+
+export default { toCamelCase, toKabobCase, normalizeDateString };

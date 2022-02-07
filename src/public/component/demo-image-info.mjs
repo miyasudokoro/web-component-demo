@@ -1,6 +1,7 @@
 
 import DemoError from './demo-error.mjs';
 import helper from '../service/helper.mjs';
+import utils from '../service/utils.mjs';
 
 const MEDIA_TYPE = {
     image: 'img',
@@ -20,7 +21,7 @@ iframe {
     width: 640px;
     height: 360px;
 }
-img:not([src]), iframe:not([src]), [type=date]:not([value]), figcaption > :not([type=date]):empty {
+img:not([src]), iframe:not([src]), figcaption > *:empty {
     display: none;
     visibility: hidden;
 }
@@ -41,7 +42,12 @@ img:not([src]), iframe:not([src]), [type=date]:not([value]), figcaption > :not([
 </figure>
 `;
 
+/** @class DemoImageInfo
+ * @extends HTMLElement
+ * @description Shows an image and its information.
+ */
 class DemoImageInfo extends HTMLElement {
+    /** Constructor */
     constructor() {
         super();
         // here is the shadow root
@@ -52,130 +58,202 @@ class DemoImageInfo extends HTMLElement {
         this.shadowRoot.innerHTML = TEMPLATE;
     }
 
+    /** @type {string} */
     static get tag() {
         return 'demo-image-info';
     }
 
+    /** @type Array<string> */
     static get observedAttributes() {
         return [ 'endpoint', 'base', 'media-type', 'copyright', 'title', 'explanation', 'tags', 'date', 'url', 'base', 'error-message' ];
     }
 
+    /** The endpoint to call to get the information about the image/video.
+     * @type {string}
+     */
     get endpoint() {
         return this.getAttribute( 'endpoint' );
     }
+    // note: use of @alias lets me pass my ESLint rule that requires JSDocs
+    /** @alias DemoImageInfo.prototype~endpoint */
     set endpoint( endpoint ) {
         this.setAttribute( 'endpoint', endpoint );
     }
 
+    /** The base URL, if any.
+     * @type {string}
+     */
     get base() {
         return this.getAttribute( 'base' ) || '';
     }
+    /** @alias DemoImageInfo.prototype~base */
     set base( base ) {
         this.setAttribute( 'base', base || '' );
     }
 
+    /** The media type, either 'img' or 'video'. Videos (from YouTube) get put into an iframe.
+     * @type {string}
+     */
     get mediaType() {
         return this.getAttribute( 'media-type' ) || 'img';
     }
+    /** @alias DemoImageInfo.prototype~mediaType */
     set mediaType( type ) {
         this.setAttribute( 'media-type', MEDIA_TYPE[ type ] );
     }
-    set media_type( type ) {
-        this.mediaType = type;
-    }
 
+    /** The owner of the copyright of the image/video.
+     * @type {string}
+     */
     get copyright() {
         return this.getAttribute( 'copyright' );
     }
+    /** @alias DemoImageInfo.prototype~copyright */
     set copyright( copyright ) {
         this.setAttribute( 'copyright', copyright );
     }
 
+    /** The image/video title.
+     * Note: this sets the built-in attribute 'title' and so will become hover text.
+     *
+     * @type {string}
+     */
     get title() {
         return this.getAttribute( 'title' );
     }
+    /** @alias DemoImageInfo.prototype~title */
     set title( title ) {
         this.setAttribute( 'title', title );
     }
 
+    /** The explanation about the image/video.
+     * @type {string}
+     */
     get explanation() {
         return this.getAttribute( 'explanation' );
     }
+    /** @alias DemoImageInfo.prototype~explanation */
     set explanation( explanation ) {
         this.setAttribute( 'explanation', explanation );
     }
 
+    /** Tags describing the image/video.
+     * Note: this is an array of strings, but it must be stored in the element attribute as a string.
+     * @type {Array<string>}
+     */
     get tags() {
         const tags = this.getAttribute( 'tags' );
-        return tags && tags.split( ',' );
+        return tags ? tags.split( ',' ) : [];
     }
+    /** @alias DemoImageInfo.prototype~tags */
     set tags( tagsArray ) {
-        const tags = tagsArray ? tagsArray.join( ',' ) : '';
-        this.setAttribute( 'tags', tags );
+        if ( Array.isArray( tagsArray ) ) {
+            this.setAttribute( 'tags', tagsArray.join( ',' ) );
+        } else if ( !tagsArray ) {
+            this.removeAttribute( 'tags' );
+        }
     }
 
+    /** The date of the image/video.
+     * @type {string}
+     */
     get date() {
         return this.getAttribute( 'date' );
     }
+    /** @alias DemoImageInfo.prototype~date */
     set date( date ) {
         this.setAttribute( 'date', date );
     }
-    set created_at( date ) {
+
+    /** Alias of date.
+     * @type {string}
+     */
+    get createdAt() {
+        return this.date;
+    }
+    /** @alias DemoImageInfo.prototype~createdAt */
+    set createdAt( date ) {
         this.date = date;
     }
 
+    /** The URL of the image/video.
+     * @type {string}
+     */
     get url() {
         return this.getAttribute( 'url' );
     }
+    /** @alias DemoImageInfo.prototype~url */
     set url( url ) {
         this.setAttribute( 'url', url );
     }
 
+    /** An error message.
+     * @type {string}
+     */
     get errorMessage() {
         return this.getAttribute( 'error-message' );
     }
+    /** @alias DemoImageInfo.prototype~errorMessage */
     set errorMessage( errorMessage ) {
         this.setAttribute( 'error-message', errorMessage );
     }
 
+    /** @override */
     connectedCallback() {
         helper.connectedCallback( this );
     }
 
+    /** @override */
     disconnectedCallback() {
         helper.disconnectedCallback( this );
     }
 
+    /** @override */
     attributeChangedCallback( name, previous, current ) {
         helper.attributeChangedCallback( this, name, previous, current );
     }
 
+    /** Acts when the endpoint value changes.
+     *
+     * @param endpoint
+     * @returns {Promise<void>}
+     */
     endpointAttributeChanged( endpoint ) {
         if ( !endpoint ) {
-            this.displayError( 'Endpoint not configured' );
+            this.errorMessage = 'Endpoint not configured';
         } else {
-            return fetch( endpoint )
-                .then( response => response.ok ? response.json() : Promise.reject( new Error( response.status + ' ' + response.statusText ) ) )
-                .then( json => this.displayContent( json ) )
-                .catch( e => {
-                    console.error( e );
-                    this.errorMessage = e.message;
-                } );
+            this.errorMessage = undefined;
+            return this.fetchFromEndpoint( endpoint );
         }
     }
 
+    /** Displays the copyright name.
+     *
+     * @param copyright {string} name of person who holds the copyright
+     */
     copyrightAttributeChanged( copyright ) {
         this.shadowRoot.querySelector( 'cite' ).textContent = copyright || '';
     }
 
+    /** Displays the title.
+     *
+     * @param title {string} title of the image/video
+     */
     titleAttributeChanged( title ) {
         this.shadowRoot.querySelector( 'label' ).textContent = title || '';
     }
 
+    /** Displays the explanation.
+     *
+     * @param explanation {string} explanation of the image/video
+     */
     explanationAttributeChanged( explanation ) {
         this.shadowRoot.querySelector( 'blockquote' ).textContent = explanation || '';
     }
 
+    /** Displays the tags.
+     *
+     */
     tagsAttributeChanged() {
         const tags = this.tags;
         const list = this.shadowRoot.querySelector( 'ul' );
@@ -185,29 +263,85 @@ class DemoImageInfo extends HTMLElement {
         list.insertAdjacentHTML( 'beforeend', tags.map( tag => `<li>${tag}</li>` ).join( '' ) );
     }
 
-    dateAttributeChanged( date ) {
-        const time = this.shadowRoot.querySelector( 'time' );
-        time.setAttribute( 'datetime', date );
-        time.textContent = new Date( date ).toLocaleDateString();
+    /** Displays the date.
+     *
+     * @param dateStr {string} the date of the image/video
+     */
+    dateAttributeChanged( dateStr ) {
+        const normalized = utils.normalizeDateString( dateStr );
+        if ( dateStr !== normalized ) {
+            // fix it; this function will be called a second time due to resetting the attribute
+            this.setAttribute( 'date', normalized );
+        } else {
+            const time = this.shadowRoot.querySelector( 'time' );
+            time.setAttribute( 'datetime', dateStr );
+            time.textContent = new Date( dateStr ).toLocaleDateString();
+        }
     }
 
+    /** Handles the base attribute changing.
+     *
+     */
     baseAttributeChanged() {
         this._setMediaSource();
     }
 
+    /** Handles the media type attribute changing.
+     *
+     */
     mediaTypeAttributeChanged() {
         this._setMediaSource();
     }
 
+    /** Handles the url attribute changing.
+     *
+     */
     urlAttributeChanged() {
         this._setMediaSource();
     }
 
+    /** Displays an error message.
+     *
+     */
     errorMessageAttributeChanged( message ) {
         const error = this.shadowRoot.querySelector( DemoError.tag );
         error.message = message;
     }
 
+    /** Fetches from the given endpoint.
+     *
+     * @param endpoint {string} the given endpoint
+     * @returns {Promise<void>}
+     */
+    fetchFromEndpoint( endpoint ) {
+        return fetch( endpoint )
+            .then( response => response.ok ? response.json() : Promise.reject( new Error( response.status + ' ' + response.statusText ) ) )
+            .then( json => this.displayContent( json ) )
+            .catch( e => {
+                console.error( e );
+                this.errorMessage = e.message;
+            } );
+    }
+
+    /** Displays content fetched from the endpoint.
+     *
+     * @param data {object} fetched data
+     */
+    displayContent( data ) {
+        for ( const key in data ) {
+            // normalize the data's keys into camelCase because this class's properties are camelCase
+            const property = utils.toCamelCase( key );
+            const descriptor = Object.getOwnPropertyDescriptor( DemoImageInfo.prototype, property );
+            if ( descriptor && descriptor.set ) {
+                this[ property ] = data[ property ];
+            }
+        }
+    }
+
+    /** Sets the source on the img/video.
+     *
+     * @private
+     */
     _setMediaSource() {
         if ( this.url ) {
             const src = ( this.base || '' ) + ( this.url || '' );
@@ -222,19 +356,8 @@ class DemoImageInfo extends HTMLElement {
             }
         }
     }
-
-    displayContent( data ) {
-        for ( const property in data ) {
-            const descriptor = Object.getOwnPropertyDescriptor( DemoImageInfo.prototype, property );
-            if ( descriptor && descriptor.set ) {
-                this[ property ] = data[ property ];
-            }
-        }
-    }
 }
-
 
 export default DemoImageInfo;
 
 customElements.define( DemoImageInfo.tag, DemoImageInfo );
-
