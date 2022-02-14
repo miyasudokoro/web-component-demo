@@ -1,18 +1,20 @@
 import DemoImageInfo from '/src/public/component/demo-image-info.mjs';
 import utils from '/src/public/service/utils.mjs';
 
-describe( 'component/DemoImageInfo', () => {
+describe( 'component/demo-image-info', () => {
     let element;
+    const mockData = {
+        media_type: 'image',
+        copyright: 'Juan Pérez',
+        title: 'Cat falls off chair',
+        explanation: 'Juan took this funny picture of his cat falling off a chair.',
+        tags: 'cute,funny',
+        created_at: '2021-10-10',
+        url: 'https://api.com/catpic/3000',
+        extra: 'this property is not configured'
+    };
     const mockAPI = {
-        'https://api.com/1': {
-            copyright: 'Juan Pérez'
-        },
-        'https://api.com/2': {
-            copyright: 'Jane Doe'
-        },
-        'https://api.com/3': {
-            copyright: 'Yamada Tarou'
-        }
+        'https://catpictures.api.com': mockData
     };
 
     beforeEach( () => {
@@ -113,17 +115,24 @@ describe( 'component/DemoImageInfo', () => {
             const afterStyle = getComputedStyle( inner );
             expect( afterStyle.getPropertyValue( 'display' ) ).not.to.equal( 'none' ); // several display settings could exist, but not "none"
             expect( afterStyle.getPropertyValue( 'visibility' ) ).to.equal( 'visible' );
+
+            element[ property ] = undefined;
+
+            expect( inner.textContent ).to.equal( '' );
+            const removedStyle = getComputedStyle( inner );
+            expect( removedStyle.getPropertyValue( 'display' ) ).to.equal( 'none' );
+            expect( removedStyle.getPropertyValue( 'visibility' ) ).to.equal( 'hidden' );
         }
 
-        it( 'gets and sets copyright', () => {
+        it( 'gets, sets, and removes copyright', () => {
             _checkTextContentProperties( 'cite', 'copyright' );
         } );
 
-        it( 'gets and sets title', () => {
+        it( 'gets, sets, and removes title', () => {
             _checkTextContentProperties( 'label', 'title' );
         } );
 
-        it( 'gets and sets explanation', () => {
+        it( 'gets, sets, and removes explanation', () => {
             _checkTextContentProperties( 'blockquote', 'explanation' );
         } );
     } );
@@ -153,6 +162,123 @@ describe( 'component/DemoImageInfo', () => {
             expect( element.createdAt ).to.equal( '2020-10-10' );
             expect( element.date ).to.equal( '2020-10-10' );
             expect( element.getAttribute( 'date' ) ).to.equal( '2020-10-10' );
+        } );
+
+        it( 'removes date', () => {
+            element.date = '2011-11-11';
+            expect( element.date ).to.equal( '2011-11-11' );
+            const inner = element.shadowRoot.querySelector( 'time' );
+
+            element.date = '';
+
+            expect( element.date ).to.equal( null );
+            expect( inner.textContent ).to.equal( '' );
+            const initialStyle = getComputedStyle( inner );
+            expect( initialStyle.getPropertyValue( 'display' ) ).to.equal( 'none' );
+            expect( initialStyle.getPropertyValue( 'visibility' ) ).to.equal( 'hidden' );
+        } );
+    } );
+
+    describe( 'media source', () => {
+        let img, video;
+
+        beforeEach( () => {
+            img = element.shadowRoot.querySelector( 'img' );
+            video = element.shadowRoot.querySelector( 'iframe' );
+            sinon.stub( img, 'setAttribute' );
+            sinon.stub( img, 'removeAttribute' );
+            sinon.stub( video, 'setAttribute' );
+            sinon.stub( video, 'removeAttribute' );
+        } );
+
+        it( 'with base, type video', () => {
+            element.base = 'https://base.example.com/';
+            element.url = 'my/endpoint';
+            element.mediaType = 'video';
+
+            expect( video.setAttribute ).to.have.been.calledWith( 'src', 'https://base.example.com/my/endpoint' );
+            expect( img.removeAttribute ).to.have.been.calledWith( 'src' );
+        } );
+
+        it( 'without base, type image', () => {
+            element.url = 'https://example.com/my/endpoint';
+            element.mediaType = 'image';
+
+            expect( img.setAttribute ).to.have.been.calledWith( 'src', 'https://example.com/my/endpoint' );
+            expect( video.removeAttribute ).to.have.been.calledWith( 'src' );
+        } );
+    } );
+
+    describe( 'setting endpoint property', () => {
+        // Note: we are stubbing fetchFromEndpoint here because it is an async function and we can't get
+        // its promise out of `element.endpoint` attribute-changed-handler to return to Mocha/Chai
+        beforeEach( () => {
+            sinon.stub( element, 'fetchFromEndpoint' );
+        } );
+
+        it( 'setting endpoint property calls fetch', () => {
+            element.endpoint = 'https://api.com';
+            expect( element.fetchFromEndpoint ).to.have.been.calledWith( 'https://api.com' );
+        } );
+
+        it( 'handles missing endpoint', () => {
+            element.endpoint = 'https://nope.com';
+            expect( element.fetchFromEndpoint ).to.have.been.calledWith( 'https://nope.com' );
+            expect( element.fetchFromEndpoint.callCount ).to.equal( 1 );
+
+            element.endpoint = '';
+
+            expect( element.errorMessage ).to.equal( 'Endpoint not configured' );
+            expect( element.fetchFromEndpoint.callCount ).to.equal( 1 );
+        } );
+    } );
+
+    describe( 'fetch from endpoint', () => {
+        // now we call fetchFromEndpoint directly, get the promise, and make async test cases
+
+        it( 'handles API error', () => {
+            // note: we will stub utils.error so the console will not be called
+            sinon.stub( utils, 'error' );
+            const promise = element.fetchFromEndpoint( 'https://missing.api.com' );
+
+            // proof that the promise has not yet resolved
+            expect( element.errorMessage ).to.equal( null );
+            expect( utils.error ).not.to.have.been.called();
+
+            // return a promise to tell Mocha/Chai that it is an async test case
+            return promise
+                .then( () => {
+                    expect( element.errorMessage ).to.equal( '404 Not Found' );
+                    expect( utils.error ).to.have.been.called();
+                    const error = utils.error.lastCall.firstArg;
+                    expect( error instanceof Error ).to.be.true();
+                    expect( error.message ).to.equal( '404 Not Found' );
+                } );
+        } );
+
+        it( 'displays content from API response', () => {
+            sinon.stub( utils, 'error' );
+
+            const img = element.shadowRoot.querySelector( 'img' );
+            const video = element.shadowRoot.querySelector( 'iframe' );
+            sinon.stub( img, 'setAttribute' );
+            sinon.stub( img, 'removeAttribute' );
+            sinon.stub( video, 'setAttribute' );
+            sinon.stub( video, 'removeAttribute' );
+
+            return element.fetchFromEndpoint( 'https://catpictures.api.com' )
+                .then( () => {
+                    expect( element.copyright ).to.equal( mockData.copyright );
+                    expect( element.title ).to.equal( mockData.title );
+                    expect( element.explanation ).to.equal( mockData.explanation );
+                    expect( element.tags ).to.deep.equal( [ 'cute', 'funny' ] );
+                    expect( element.date ).to.equal( mockData.created_at );
+                    expect( element.url ).to.equal( mockData.url );
+                    expect( img.setAttribute ).to.have.been.calledWith( 'src', mockData.url );
+                    expect( video.removeAttribute ).to.have.been.calledWith( 'src' );
+
+                    expect( element.extra ).to.be.undefined();
+                } );
         } );
     } );
 } );

@@ -4,10 +4,12 @@ import { awaitAttributeChange } from '/test/ui.util.mjs';
 describe( 'component/demo-image-info-astronomy', () => {
     let element;
     let mockAPI;
-    const today = '2022-02-06'; // set a specific date so we know what date "today" is
+    const today = '2022-02-06';
 
     beforeEach( () => {
+        // set a specific date so we know what date "today" is
         sinon.useFakeTimers( new Date( today ) );
+
         mockAPI = {
             [ today ]: {
                 date: today,
@@ -53,7 +55,7 @@ describe( 'component/demo-image-info-astronomy', () => {
                 expect( element.date ).to.equal( mockAPI[ today ].date );
                 expect( input.value ).to.equal( mockAPI[ today ].date );
                 const inputStyle = getComputedStyle( input );
-                expect( inputStyle.getPropertyValue( 'display' ) ).to.equal( 'flex' );
+                expect( inputStyle.getPropertyValue( 'display' ) ).not.to.equal( 'none' );
                 expect( inputStyle.getPropertyValue( 'visibility' ) ).to.equal( 'visible' );
             } );
     } );

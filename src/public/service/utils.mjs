@@ -9,7 +9,7 @@
  * @param str {string} the string
  * @returns {string} the camelCase version of the string
  */
-export function toCamelCase( str ) {
+function toCamelCase( str ) {
     return str
         // turn the beginning lower case
         .replace( /^[A-Z]*/g, x => x.toLowerCase() )
@@ -22,7 +22,7 @@ export function toCamelCase( str ) {
  * @param str {string} the string
  * @returns {string} the kabob-case version of the string
  */
-export function toKabobCase( str ) {
+function toKabobCase( str ) {
     return str
         // turn the beginning lower case
         .replace( /^[A-Z]*/g, x => x.toLowerCase() )
@@ -37,7 +37,7 @@ export function toKabobCase( str ) {
  * @param [dateString] {string} a date string, default today
  * @returns {string} normalized date string in structure YYYY-MM-DD, or empty string for invalid date
  */
-export function normalizeDateString( dateString ) {
+function normalizeDateString( dateString ) {
     // strangely, undefined and empty are not the same thing to the Date constructor
     const date = dateString ? new Date( dateString ) : new Date();
     // isNaN implicitly casts to Number
@@ -47,4 +47,12 @@ export function normalizeDateString( dateString ) {
     return '';
 }
 
-export default { toCamelCase, toKabobCase, normalizeDateString };
+/** By wrapping the console, we can stub calls to it without affecting the unit tests' console output.
+ *
+ * @param messages {...any} things to log
+ */
+function error( ...messages ) {
+    console.error( ...messages );
+}
+
+export default { toCamelCase, toKabobCase, normalizeDateString, error };

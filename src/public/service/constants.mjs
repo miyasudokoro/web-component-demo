@@ -5,4 +5,6 @@ export const CUSTOM_EVENT = {
     VIEW_CHANGE: 'view-change'
 };
 
-export const SERVER_LOCATION = '/page';
+export const PAGE = 'page';
+
+export const SERVER_LOCATION = '';

@@ -1,4 +1,4 @@
-// dependencies: third-party files, test files, mocks, etc.
+// dependencies: third-party files, test files, mocks, HTML, CSS, etc.
 const dependencies = [
     './node_modules/sinon-chai/lib/sinon-chai.js',
     './node_modules/dirty-chai/lib/dirty-chai.js',
@@ -11,6 +11,16 @@ const dependencies = [
     {
         pattern: './test/ui.setup.mjs',
         type: 'module'
+    },
+    {
+        pattern: './src/private/page/**',
+        served: true,
+        included: false
+    },
+    {
+        pattern: './src/public/page/**',
+        served: true,
+        included: false
     }
 ];
 

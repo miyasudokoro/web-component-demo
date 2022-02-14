@@ -77,18 +77,26 @@ class DemoImageInfo extends HTMLElement {
     // note: use of @alias lets me pass my ESLint rule that requires JSDocs
     /** @alias DemoImageInfo.prototype~endpoint */
     set endpoint( endpoint ) {
-        this.setAttribute( 'endpoint', endpoint );
+        if ( !endpoint ) {
+            this.removeAttribute( 'endpoint' );
+        } else {
+            this.setAttribute( 'endpoint', endpoint );
+        }
     }
 
     /** The base URL, if any.
      * @type {string}
      */
     get base() {
-        return this.getAttribute( 'base' ) || '';
+        return this.getAttribute( 'base' );
     }
     /** @alias DemoImageInfo.prototype~base */
     set base( base ) {
-        this.setAttribute( 'base', base || '' );
+        if ( !base ) {
+            this.removeAttribute( 'base' );
+        } else {
+            this.setAttribute( 'base', base );
+        }
     }
 
     /** The media type, either 'img' or 'video'. Videos (from YouTube) get put into an iframe.
@@ -99,7 +107,11 @@ class DemoImageInfo extends HTMLElement {
     }
     /** @alias DemoImageInfo.prototype~mediaType */
     set mediaType( type ) {
-        this.setAttribute( 'media-type', MEDIA_TYPE[ type ] );
+        if ( !type ) {
+            this.removeAttribute( 'media-type' );
+        } else if ( MEDIA_TYPE[ type ] ) {
+            this.setAttribute( 'media-type', MEDIA_TYPE[ type ] );
+        }
     }
 
     /** The owner of the copyright of the image/video.
@@ -110,7 +122,11 @@ class DemoImageInfo extends HTMLElement {
     }
     /** @alias DemoImageInfo.prototype~copyright */
     set copyright( copyright ) {
-        this.setAttribute( 'copyright', copyright );
+        if ( !copyright ) {
+            this.removeAttribute( 'copyright' );
+        } else {
+            this.setAttribute( 'copyright', copyright );
+        }
     }
 
     /** The image/video title.
@@ -123,7 +139,11 @@ class DemoImageInfo extends HTMLElement {
     }
     /** @alias DemoImageInfo.prototype~title */
     set title( title ) {
-        this.setAttribute( 'title', title );
+        if ( !title ) {
+            this.removeAttribute( 'title' );
+        } else {
+            this.setAttribute( 'title', title );
+        }
     }
 
     /** The explanation about the image/video.
@@ -134,7 +154,11 @@ class DemoImageInfo extends HTMLElement {
     }
     /** @alias DemoImageInfo.prototype~explanation */
     set explanation( explanation ) {
-        this.setAttribute( 'explanation', explanation );
+        if ( !explanation ) {
+            this.removeAttribute( 'explanation' );
+        } else {
+            this.setAttribute( 'explanation', explanation );
+        }
     }
 
     /** Tags describing the image/video.
@@ -149,6 +173,8 @@ class DemoImageInfo extends HTMLElement {
     set tags( tagsArray ) {
         if ( Array.isArray( tagsArray ) ) {
             this.setAttribute( 'tags', tagsArray.join( ',' ) );
+        } else if ( typeof tagsArray === 'string' ) {
+            this.setAttribute( 'tags', tagsArray );
         } else if ( !tagsArray ) {
             this.removeAttribute( 'tags' );
         }
@@ -162,7 +188,11 @@ class DemoImageInfo extends HTMLElement {
     }
     /** @alias DemoImageInfo.prototype~date */
     set date( date ) {
-        this.setAttribute( 'date', date );
+        if ( !date ) {
+            this.removeAttribute( 'date' );
+        } else {
+            this.setAttribute( 'date', date );
+        }
     }
 
     /** Alias of date.
@@ -184,7 +214,11 @@ class DemoImageInfo extends HTMLElement {
     }
     /** @alias DemoImageInfo.prototype~url */
     set url( url ) {
-        this.setAttribute( 'url', url );
+        if ( !url ) {
+            this.removeAttribute( 'url' );
+        } else {
+            this.setAttribute( 'url', url );
+        }
     }
 
     /** An error message.
@@ -195,7 +229,11 @@ class DemoImageInfo extends HTMLElement {
     }
     /** @alias DemoImageInfo.prototype~errorMessage */
     set errorMessage( errorMessage ) {
-        this.setAttribute( 'error-message', errorMessage );
+        if ( !errorMessage ) {
+            this.removeAttribute( 'error-message' );
+        } else {
+            this.setAttribute( 'error-message', errorMessage );
+        }
     }
 
     /** @override */
@@ -268,14 +306,19 @@ class DemoImageInfo extends HTMLElement {
      * @param dateStr {string} the date of the image/video
      */
     dateAttributeChanged( dateStr ) {
-        const normalized = utils.normalizeDateString( dateStr );
-        if ( dateStr !== normalized ) {
-            // fix it; this function will be called a second time due to resetting the attribute
-            this.setAttribute( 'date', normalized );
+        const time = this.shadowRoot.querySelector( 'time' );
+        if ( !dateStr ) {
+            time.setAttribute( 'datetime', '' );
+            time.textContent = '';
         } else {
-            const time = this.shadowRoot.querySelector( 'time' );
-            time.setAttribute( 'datetime', dateStr );
-            time.textContent = new Date( dateStr ).toLocaleDateString();
+            const normalized = utils.normalizeDateString( dateStr );
+            if ( dateStr !== normalized ) {
+                // fix it; this function will be called a second time due to resetting the attribute
+                this.setAttribute( 'date', normalized );
+            } else {
+                time.setAttribute( 'datetime', dateStr );
+                time.textContent = new Date( dateStr ).toLocaleDateString();
+            }
         }
     }
 
@@ -318,7 +361,7 @@ class DemoImageInfo extends HTMLElement {
             .then( response => response.ok ? response.json() : Promise.reject( new Error( response.status + ' ' + response.statusText ) ) )
             .then( json => this.displayContent( json ) )
             .catch( e => {
-                console.error( e );
+                utils.error( e );
                 this.errorMessage = e.message;
             } );
     }
@@ -333,7 +376,7 @@ class DemoImageInfo extends HTMLElement {
             const property = utils.toCamelCase( key );
             const descriptor = Object.getOwnPropertyDescriptor( DemoImageInfo.prototype, property );
             if ( descriptor && descriptor.set ) {
-                this[ property ] = data[ property ];
+                this[ property ] = data[ key ];
             }
         }
     }
@@ -343,16 +386,17 @@ class DemoImageInfo extends HTMLElement {
      * @private
      */
     _setMediaSource() {
-        if ( this.url ) {
-            const src = ( this.base || '' ) + ( this.url || '' );
+        if ( this.url && this.mediaType ) {
+            const src = ( this.base || '' ) + this.url;
             const img = this.shadowRoot.querySelector( 'img' );
             const video = this.shadowRoot.querySelector( 'iframe' );
             if ( this.mediaType === 'video' ) {
                 img.removeAttribute( 'src' );
-                video.src = src;
+                // note: if I use setAttribute, I can stub it with Sinon in my tests so my test console does not have 404 errors
+                video.setAttribute( 'src', src );
             } else {
                 video.removeAttribute( 'src' );
-                img.src = src;
+                img.setAttribute( 'src', src );
             }
         }
     }
