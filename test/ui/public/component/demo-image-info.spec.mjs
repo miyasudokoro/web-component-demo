@@ -18,24 +18,17 @@ describe( 'component/demo-image-info', () => {
     };
 
     beforeEach( () => {
-        sinon.stub( window, 'fetch' ).callsFake( href => {
-            return new Promise( resolve => {
-                const result = mockAPI[ href ];
-                const status = result ? { status: 200, statusText: 'ok' } : { status: 404, statusText: 'Not Found' };
-
-                // note: you have to use response.clone() so the response body will not count as "already used"
-                const response = new Response( JSON.stringify( result ), status ).clone();
-                resolve( response );
-            } );
-        } );
+        // fixture: a fresh web component is added to the DOM before each test
+        // ... our ui.setup.mjs file will automatically remove the element after each test case
         element = new DemoImageInfo();
         document.body.append( element );
     } );
 
     describe( 'tags', () => {
         it( 'allows no tags as an empty array', () => {
-            expect( element.tags ).to.deep.equal( [] );
+            // this entire test case establishes the initial values so our next ones can assume them
             expect( element.hasAttribute( 'tags' ) ).to.be.false();
+            expect( element.tags ).to.deep.equal( [] );
 
             const lis = element.shadowRoot.querySelectorAll( 'li' );
             expect( lis.length ).to.equal( 0 );
@@ -235,10 +228,25 @@ describe( 'component/demo-image-info', () => {
 
     describe( 'fetch from endpoint', () => {
         // now we call fetchFromEndpoint directly, get the promise, and make async test cases
+        beforeEach( () => {
+            sinon.stub( window, 'fetch' ).callsFake( href => {
+                return new Promise( resolve => {
+                    const result = mockAPI[ href ];
+                    const status = result ? { status: 200, statusText: 'ok' } : { status: 404, statusText: 'Not Found' };
+
+                    // note: you have to use response.clone() so the response body will not count as "already used"
+                    const response = new Response( JSON.stringify( result ), status ).clone();
+                    resolve( response );
+                } );
+            } );
+        } );
 
         it( 'handles API error', () => {
             // note: we will stub utils.error so the console will not be called
             sinon.stub( utils, 'error' );
+
+            expect( element.errorMessage ).to.equal( null );
+
             const promise = element.fetchFromEndpoint( 'https://missing.api.com' );
 
             // proof that the promise has not yet resolved
@@ -249,14 +257,17 @@ describe( 'component/demo-image-info', () => {
             return promise
                 .then( () => {
                     expect( element.errorMessage ).to.equal( '404 Not Found' );
+
                     expect( utils.error ).to.have.been.called();
                     const error = utils.error.lastCall.firstArg;
                     expect( error instanceof Error ).to.be.true();
                     expect( error.message ).to.equal( '404 Not Found' );
+                    expect( window.fetch ).to.have.been.calledWith( 'https://missing.api.com' );
                 } );
         } );
 
         it( 'displays content from API response', () => {
+            // 1. ready initial state/fixture
             sinon.stub( utils, 'error' );
 
             const img = element.shadowRoot.querySelector( 'img' );
@@ -266,18 +277,27 @@ describe( 'component/demo-image-info', () => {
             sinon.stub( video, 'setAttribute' );
             sinon.stub( video, 'removeAttribute' );
 
+            // 2. assert the initial value of any changeable states
+            // ... we'll take a little risk and assume an empty element starts empty
+
+            // 3. call the function
             return element.fetchFromEndpoint( 'https://catpictures.api.com' )
                 .then( () => {
+                    // the promise resolves with void, so we don't have a return value to check
+
+                    // 5. assert any states that could have changed
                     expect( element.copyright ).to.equal( mockData.copyright );
                     expect( element.title ).to.equal( mockData.title );
                     expect( element.explanation ).to.equal( mockData.explanation );
                     expect( element.tags ).to.deep.equal( [ 'cute', 'funny' ] );
                     expect( element.date ).to.equal( mockData.created_at );
                     expect( element.url ).to.equal( mockData.url );
+                    expect( element.extra ).to.be.undefined();
+
+                    // 6. assert correct mocking
                     expect( img.setAttribute ).to.have.been.calledWith( 'src', mockData.url );
                     expect( video.removeAttribute ).to.have.been.calledWith( 'src' );
-
-                    expect( element.extra ).to.be.undefined();
+                    expect( window.fetch ).to.have.been.calledWith( 'https://catpictures.api.com' );
                 } );
         } );
     } );

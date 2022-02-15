@@ -1,4 +1,3 @@
-// Copyright © 2022 Ricoh Company, Ltd. All rights reserved.
 
 import utils from '/src/public/service/utils.mjs';
 

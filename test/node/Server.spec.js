@@ -97,7 +97,8 @@ describe( 'Server.js', () => {
 
     describe( 'static auto start', () => {
         beforeEach( () => {
-            // we can stub the initialization function to prevent actual server and log streams
+            // we can stub the initialization function to prevent actual server and log streams that could become test zombies
+            // as long as we test them separately, it is OK to bypass them here
             sinon.stub( Server.prototype, 'initialize' );
         } );
 

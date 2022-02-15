@@ -4,10 +4,10 @@ const coverage = require( '../.karma.coverage.base.js' );
 
 const settings = coverage( baseFn );
 
-settings.coverageReporter.dir = path.join( process.cwd(), 'reports' );
+settings.coverageReporter.dir = path.join( process.cwd(), 'reports/coverage' );
 settings.coverageReporter.reporters = [ {
     type: 'html',
-    subdir: 'coverage'
+    subdir: 'ui'
 } ];
 
 module.exports = function( config ) {
