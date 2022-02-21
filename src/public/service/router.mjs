@@ -1,7 +1,6 @@
 
 import { DEFAULT_VIEW, CUSTOM_EVENT } from './constants.mjs';
 
-let observer;
 let lastSent;
 let _location;
 
@@ -11,7 +10,7 @@ let _location;
  * @param [loc=window.location] {Location} the location
  */
 export function initialize( loc = location ) {
-    if ( !observer ) {
+    if ( !_location ) {
         _location = loc;
         _createNavigationObserver();
     }
@@ -23,8 +22,6 @@ export function initialize( loc = location ) {
 export function reset() {
     window.removeEventListener( 'popstate', _onHashChange );
     window.removeEventListener( 'hashchange', _onHashChange );
-    observer && observer.disconnect();
-    observer = undefined;
     _location = undefined;
     lastSent = undefined;
 }
@@ -37,12 +34,6 @@ function _createNavigationObserver() {
     window.addEventListener( 'popstate', _onHashChange );
     window.addEventListener( 'hashchange', _onHashChange );
 
-    observer = new MutationObserver( _onHashChange );
-    /*
-    observer.observe( document.body, {
-        childList: true,
-        subtree: true
-    } ); */
     _onHashChange();
 }
 
