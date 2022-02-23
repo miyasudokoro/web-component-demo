@@ -1,0 +1,46 @@
+{
+    "files": [
+        "src/**"
+    ],
+    "scripts": {
+        "start:localhost": "node src/Server.js --port 3000 --host localhost",
+        "start": "node src/Server.js --port 443 --host mydomainnamehere.com",
+        "makeTestCertificates": "mkcert create-ca && mkcert create-cert --key ./src/certs/ca.key --cert ./src/certs/ca.crt",
+        "unit:server:html": "mocha --config config/node/.mocharc.html.js",
+        "unit:server:xml": "mocha --config config/node/.mocharc.xml.js",
+        "unit:ui:html": "karma start config/ui/.karma.html.js",
+        "unit:ui:xml": "karma start config/ui/.karma.xml.js",
+        "unit:ui:debug": "karma start config/ui/.karma.html.js --debug-mode",
+        "cover:server:html": "nyc --nycrc-path=config/node/.nycrc.html.js npm run unit:server:html",
+        "cover:server:xml": "nyc --nycrc-path=config/node/.nycrc.xml.js npm run unit:server:xml",
+        "cover:ui:html": "karma start config/ui/.karma.coverage.html.js",
+        "cover:ui:xml": "karma start config/ui/.karma.coverage.xml.js",
+        "cover:xml:report": "nyc report --reporter=cobertura --reporter=text",
+        "cover:all:xml": "npm run cover:ui:xml && npm run cover:server:xml --no-clean && npm run cover:xml:report && nyc merge reports/.nyc_output reports/xml/coverage.xml"
+    },
+    "dependencies": {
+        "mime-types": "^2.1.34"
+    },
+    "devDependencies": {
+        "chai": "^4.3.6",
+        "dirty-chai": "^2.0.1",
+        "karma": "^6.3.12",
+        "karma-chai": "^0.1.0",
+        "karma-chrome-launcher": "^3.1.0",
+        "karma-coverage": "^2.1.0",
+        "karma-firefox-launcher": "^2.1.2",
+        "karma-html-detailed-reporter": "^2.1.0",
+        "karma-junit-reporter": "^2.0.1",
+        "karma-mocha": "^2.0.1",
+        "karma-mocha-reporter": "^2.2.5",
+        "karma-sinon": "^1.0.5",
+        "mkcert": "^1.5.0",
+        "mocha": "^9.2.0",
+        "mocha-junit-reporter": "^2.0.2",
+        "mochawesome": "^7.0.1",
+        "nyc": "^15.1.0",
+        "rewire": "^6.0.0",
+        "sinon": "^13.0.0",
+        "sinon-chai": "^3.7.0"
+    }
+}
