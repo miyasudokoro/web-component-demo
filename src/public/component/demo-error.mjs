@@ -6,16 +6,16 @@ const TEMPLATE = `
 
 [aria-live] {
     display: block;
-    color: var(--demo-error-text-color, red);
+    color: var(--demo-error-text-color, firebrick);
     padding: 40px;
-    border: 1px solid var(--demo-error-text-color, red);
+    border: 1px solid var(--demo-error-text-color, firebrick);
 }
 [aria-live]:empty {
     display: none;
 }
 
 </style>
-<aside aria-live></aside>
+<aside aria-live="assertive" role="alert"></aside>
 `;
 
 /** @class DemoError
@@ -40,17 +40,17 @@ class DemoError extends HTMLElement {
 
     /** @type Array<string> */
     static get observedAttributes() {
-        return [ 'message' ];
+        return [ 'message-key' ];
     }
 
     /** @type string */
-    get message() {
-        return this.getAttribute( 'message' );
+    get messageKey() {
+        return this.getAttribute( 'message-key' );
     }
     // note: using @alias allows linter enforcement of JSDoc but prevents double listing of the property
-    /** @alias DemoError.prototype~message */
-    set message( message ) {
-        this.setAttribute( 'message', message );
+    /** @alias DemoError.prototype~messageKey */
+    set messageKey( messageKey ) {
+        this.setAttribute( 'message-key', messageKey );
     }
 
     /** @override */
@@ -73,12 +73,12 @@ class DemoError extends HTMLElement {
         helper.attributeChangedCallback( this, name, previous, current );
     }
 
-    /** Handles the message attribute changing.
+    /** Handles the message key attribute changing by passing it down to the aria-live where it will be displayed.
      *
-     * @param message
+     * @param messageKey {string} the message key
      */
-    messageAttributeChanged( message ) {
-        this.live.textContent = message;
+    messageKeyAttributeChanged( messageKey ) {
+        this.live.setAttribute( 'i18n', messageKey );
     }
 }
 

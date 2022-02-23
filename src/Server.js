@@ -10,15 +10,14 @@ const STATUS_TEXT = {
     404: 'Not Found',
     500: 'Internal Server Error'
 };
-
-const staticFileCache = new Map();
+const FAKE_ACCESS_TOKEN = 'my-fake-token';
 
 /** @class Server
  * @description A server
  */
 class Server {
     /** Constructor */
-    constructor( host = 'localhost', port = '4000' ) {
+    constructor( host = 'localhost', port = '3000' ) {
         this.initialize( host, port );
     }
 
@@ -48,13 +47,6 @@ class Server {
             // string
             return argv[ index + 1 ];
         }
-    }
-
-    /** Clears the server-side cache.
-     * Note: we will use this in unit testing to restore original state
-     */
-    static reset() {
-        staticFileCache.clear();
     }
 
     /** Initializes the server instance.
@@ -126,6 +118,18 @@ class Server {
             return this.servePublicFile( pathName, response )
                 .catch( () => this.servePrivateFile( pathName, response, request ) )
                 .catch( e => this.serveError( pathName, response, e ) );
+        } else if ( request.method === 'POST' ) {
+            let body = '';
+
+            request.on( 'data', chunk => ( body += chunk ) );
+
+            request.on( 'end', () => {
+                switch ( request.url ) {
+                    case '/login':
+                        this.logIn( body, request, response );
+                        break;
+                }
+            } );
         }
     }
 
@@ -145,19 +149,6 @@ class Server {
         return pathName;
     }
 
-    /** Serves a file.
-     *
-     * @param fullPathName {string} the relative path
-     * @returns {Promise}
-     * @private
-     */
-    _getFile( fullPathName ) {
-        if ( !staticFileCache.has( fullPathName ) ) {
-            staticFileCache.set( fullPathName, fs.promises.readFile( fullPathName ) );
-        }
-        return staticFileCache.get( fullPathName );
-    }
-
     /** Serves a file that is protected by user authorization.
      *
      * @param pathName {string} the requested path name
@@ -166,7 +157,7 @@ class Server {
      */
     servePublicFile( pathName, response ) {
         const fullPathName = path.join( __dirname, 'public', pathName );
-        return this._getFile( fullPathName )
+        return fs.promises.readFile( fullPathName )
             .then( data => this.respond( response, 200, fullPathName, data ) );
     }
 
@@ -180,7 +171,7 @@ class Server {
     servePrivateFile( pathName, response, request ) {
         const auth = request.headers.authorization;
         const fullPathName = path.join( __dirname, 'private', pathName );
-        return this._getFile( fullPathName )
+        return fs.promises.readFile( fullPathName )
             .then( data => {
                 return this.checkTokenWithAuthorizationProvider( auth )
                     .then( () => this.respond( response, 200, fullPathName, data ) );
@@ -203,6 +194,25 @@ class Server {
         return this.respond( response, 500, pathName );
     }
 
+    /** Logs in with the authorization provider.
+     *
+     * @param body {string} the request body
+     * @param request {IncomingMessage} the request
+     * @param response {ServerResponse} the response
+     */
+    logIn( body, request, response ) {
+        // obviously, this is not a real authorization provider :)
+        const parsed = JSON.parse( body );
+        if ( parsed.username === 'my-username' && parsed.password === 'fake1234' ) {
+            return this.respond( response, 200, 'login.json', JSON.stringify( {
+                'access_token': FAKE_ACCESS_TOKEN
+            } ) );
+        }
+        return this.respond( response, 403, 'login.json', JSON.stringify( {
+            messageKey: 'error.400'
+        } ) );
+    }
+
     /** Checks the authorization header against an authorization provider.
      *
      * @param authorization {string} the authorization header value
@@ -213,7 +223,7 @@ class Server {
         return new Promise( ( resolve, reject ) => {
             if ( authorization ) {
                 const [ , token ] = authorization.split( ' ' );
-                if ( token === 'my-fake-token' ) {
+                if ( token === FAKE_ACCESS_TOKEN ) {
                     return resolve();
                 }
             }
@@ -275,16 +285,8 @@ class Server {
             const type = mime.lookup( path.basename( fullPathName ) );
             headers[ 'Content-Type' ] = type;
         }
-
-        let cacheControl;
-        if ( status > 299 || fullPathName.startsWith( '/private' ) ) {
-            // prevent caching of errors or files that change when authorization changes
-            cacheControl = 'no-store';
-        } else {
-            // cache other files normally
-            cacheControl = 'Max-Age=500000, must-revalidate';
-        }
-        headers[ 'Cache-Control' ] = cacheControl;
+        // in a real application, you need to figure out your caching; we'll just turn it off for this prototype
+        headers[ 'Cache-Control' ] = 'no-store';
         return headers;
     }
 
@@ -293,7 +295,7 @@ class Server {
      * @param response {ServerResponse} the http response
      * @param status {number} the status code
      * @param fullPathName {string} the file path
-     * @param [data] {Buffer} the data to write
+     * @param [data] {Buffer|string} the data to write
      */
     respond( response, status, fullPathName, data ) {
         if ( status > 299 ) {

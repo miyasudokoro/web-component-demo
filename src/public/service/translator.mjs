@@ -3,15 +3,18 @@ const DEFAULT_LOCALE = 'en-us';
 let observer;
 let currentLocale;
 let translations;
+const shadowRoots = new WeakSet();
+
+const OBSERVATION_ATTRIBUTES = { childList: true, subtree: true, attributes: true };
 
 function initialize() {
     return fetchTranslations()
         .then( response => {
             translations = response;
 
-            setCurrentLocale();
-            createListener();
             createObserver();
+            createListener();
+            setCurrentLocale();
         } );
 }
 
@@ -28,17 +31,59 @@ function fetchTranslations() {
         'en-us': {
             'dog.pictures': 'Dog pictures',
             'cat.pictures': 'Cat pictures',
-            'source.api': 'Source API: '
+            'astronomy.pictures': 'Astronomy Image of the Day',
+            'zero.pictures': 'Dividing by zero',
+            'source.api': 'Source API: ',
+            'home': 'Home page',
+            'animals': 'Animals',
+            'nature': 'Nature',
+            'sign.in.to.view': 'Sign in to view this page',
+            'username': 'Username',
+            'password': 'Password',
+            'submit': 'Submit',
+            'error.400': 'Invalid form submission',
+            'error.401': 'You are not signed in',
+            'error.403': 'Action not allowed',
+            'error.404': 'Page not found',
+            'error.500': 'Server error'
         },
         'es-es': {
             'dog.pictures': 'Fotos de perros',
             'cat.pictures': 'Fotos de gatos',
-            'source.api': 'API de origen: '
+            'astronomy.pictures': 'Imagen astronómica del día',
+            'zero.pictures': 'Dividiendo por cero',
+            'source.api': 'API de origen: ',
+            'home': 'Página de inicio',
+            'animals': 'Animales',
+            'nature': 'El natural',
+            'sign.in.to.view': 'Inicie sesión para ver esta página',
+            'username': 'Nombre de usuario',
+            'password': 'Contraseña',
+            'submit': 'Enviar',
+            'error.400': 'Envío de formulario no válido',
+            'error.401': 'No has iniciado sesión',
+            'error.403': 'Acción no permitida',
+            'error.404': 'Página no encontrada',
+            'error.500': 'Error del servidor'
         },
         'ja-jp': {
             'dog.pictures': '犬の写真',
             'cat.pictures': '猫の写真',
-            'source.api': 'ソースAPI：'
+            'astronomy.pictures': '今日の天文画像',
+            'zero.pictures': 'ゼロ除算',
+            'source.api': 'ソースAPI：',
+            'home': 'ホームページ',
+            'animals': '動物',
+            'nature': '自然科学',
+            'sign.in.to.view': 'このページを表示するには、サインインしてください',
+            'username': 'ユーザー名',
+            'password': 'パスワード',
+            'submit': '送信',
+            'error.400': '無効なフォーム送信',
+            'error.401': 'サインインしていません',
+            'error.403': '許可されていません',
+            'error.404': 'ページが見つかりません',
+            'error.500': 'サーバーエラー'
         }
     };
     return Promise.resolve( response );
@@ -53,6 +98,8 @@ function setCurrentLocale() {
     if ( locale !== currentLocale ) {
         currentLocale = locale;
         deepTranslate( document.body );
+        document.body.setAttribute( 'lang', locale );
+        document.documentElement.setAttribute( 'lang', locale );
     }
 }
 
@@ -80,7 +127,7 @@ function createObserver() {
     observer = new MutationObserver( mutations => {
         mutations.forEach( mutation => {
             if ( mutation.type === 'attributes' && mutation.attributeName.startsWith( 'i18n' ) ) {
-                deepTranslate( mutation.target );
+                translateNode( mutation.target );
             } else if ( mutation.addedNodes ) {
                 for ( const addedNode of mutation.addedNodes ) {
                     if ( addedNode.nodeType !== Node.TEXT_NODE ) {
@@ -90,7 +137,7 @@ function createObserver() {
             }
         } );
     } );
-    observer.observe( document, { childList: true, subtree: true, attributes: true } );
+    observer.observe( document, OBSERVATION_ATTRIBUTES );
 }
 
 /** Translates the parent element and its children.
@@ -102,15 +149,24 @@ function deepTranslate( parent ) {
     let node;
     while ( node = iterator.nextNode() ) {
         translateNode( node );
+
+        // Each shadow DOM is its own "document" and needs to be observed separately
+        if ( node.shadowRoot ) {
+            deepTranslate( node.shadowRoot );
+            if ( !shadowRoots.has( node.shadowRoot ) ) {
+                shadowRoots.add( node.shadowRoot );
+                observer.observe( node.shadowRoot, OBSERVATION_ATTRIBUTES );
+            }
+        }
     }
 }
 
 /** Translates a node's text and/or attribute content.
  *
- * @param element {Element} the element that may need translating
+ * @param element {Node} the element that may need translating
  */
 function translateNode( element ) {
-    element.attributes && Array.from( element.attributes )
+    element instanceof Element && Array.from( element.attributes )
         .filter( attr => attr.name.startsWith( 'i18n' ) )
         .forEach( ( { name, value } ) => {
             const text = translations[ currentLocale ][ value ] || translations[ DEFAULT_LOCALE ][ value ];

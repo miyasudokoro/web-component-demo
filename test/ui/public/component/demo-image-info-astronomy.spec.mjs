@@ -27,7 +27,7 @@ describe( 'component/demo-image-info-astronomy', () => {
         sinon.stub( window, 'fetch' ).callsFake( href => {
             return new Promise( resolve => {
                 const url = new URL( href );
-                const date = url.searchParams.get( 'date' );
+                const date = url.searchParams.get( 'date' ) || today;
                 const result = mockAPI[ date ];
                 const status = result ? { status: 200, statusText: 'ok', ok: true } : { status: 404, statusText: 'Not Found', ok: false };
 

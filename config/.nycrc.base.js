@@ -1,5 +1,5 @@
 
-const THRESHOLD = 90;
+const THRESHOLD = 80;
 
 module.exports = {
     'check-coverage': true,
@@ -14,9 +14,9 @@ module.exports = {
     'functions': THRESHOLD,
     'statements': THRESHOLD,
     'watermarks': {
-        'branches': [ THRESHOLD, Math.max( THRESHOLD + 2, 100 ) ],
-        'lines': [ THRESHOLD, Math.max( THRESHOLD + 2, 100 ) ],
-        'functions': [ THRESHOLD, Math.max( THRESHOLD + 2, 100 ) ],
-        'statements': [ THRESHOLD, Math.max( THRESHOLD + 2, 100 ) ],
+        'branches': [ THRESHOLD, Math.min( THRESHOLD + 2, 100 ) ],
+        'lines': [ THRESHOLD, Math.min( THRESHOLD + 2, 100 ) ],
+        'functions': [ THRESHOLD, Math.min( THRESHOLD + 2, 100 ) ],
+        'statements': [ THRESHOLD, Math.min( THRESHOLD + 2, 100 ) ],
     }
 }

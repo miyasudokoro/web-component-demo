@@ -91,7 +91,7 @@ describe( 'service/translator', () => {
             expect( container.innerHTML ).to.equal( fakeEN );
         } );
 
-        it( 'translates anything added to the page', () => {
+        it( 'translates normal element added to the page', () => {
             const p = document.createElement( 'p' );
             p.setAttribute( 'i18n-title', 'cat.pictures' );
             p.setAttribute( 'i18n', 'cat.pictures' );
@@ -101,6 +101,26 @@ describe( 'service/translator', () => {
             container.append( p );
 
             // this typically takes one event cycle to complete
+            return promise.then( () => {
+                expect( p.textContent ).to.equal( 'Fotos de gatos' );
+                expect( p.getAttribute( 'title' ) ).to.equal( 'Fotos de gatos' );
+            } );
+        } );
+
+        it( 'translates inside shadow DOM', () => {
+            const div = document.createElement( 'div' );
+            div.attachShadow( { mode: 'open' } );
+
+            const p = document.createElement( 'p' );
+            p.setAttribute( 'i18n-title', 'cat.pictures' );
+            p.setAttribute( 'i18n', 'cat.pictures' );
+
+            div.shadowRoot.append( p );
+
+            const promise = awaitAttributeChange( p, 'title' );
+
+            container.append( div );
+
             return promise.then( () => {
                 expect( p.textContent ).to.equal( 'Fotos de gatos' );
                 expect( p.getAttribute( 'title' ) ).to.equal( 'Fotos de gatos' );

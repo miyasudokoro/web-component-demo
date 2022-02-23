@@ -78,7 +78,7 @@ describe( 'component/demo-main', () => {
                 .then( () => {
                     expect( demo.displayError ).to.have.been.called();
                     const el = demo.querySelector( DemoError.tag );
-                    expect( el.message ).to.equal( '403 Unauthorized' );
+                    expect( el.messageKey ).to.equal( 'error.403' );
                 } );
         } );
     } );

@@ -69,8 +69,10 @@ export class DemoImageInfoAstronomy extends DemoImageInfo {
     fetchFromEndpoint( endpoint ) {
         const url = new URL( endpoint || this.endpoint );
         const input = this.shadowRoot.querySelector( '[type=date]' );
-        // Either the input's value or today
-        url.searchParams.set( 'date', input.value || utils.normalizeDateString() );
+        // Either the input's value or none (today)
+        if ( input.value ) {
+            url.searchParams.set( 'date', input.value );
+        }
         // If the user changed the date, the URL changes, and that should trigger a fetch
         // due to DemoImageInfo#endpointAttributeChanged
         return super.fetchFromEndpoint( url.href );

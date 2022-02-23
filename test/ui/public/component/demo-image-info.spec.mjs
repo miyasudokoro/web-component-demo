@@ -245,23 +245,23 @@ describe( 'component/demo-image-info', () => {
             // note: we will stub utils.error so the console will not be called
             sinon.stub( utils, 'error' );
 
-            expect( element.errorMessage ).to.equal( null );
+            expect( element.errorMessageKey ).to.equal( null );
 
             const promise = element.fetchFromEndpoint( 'https://missing.api.com' );
 
             // proof that the promise has not yet resolved
-            expect( element.errorMessage ).to.equal( null );
+            expect( element.errorMessageKey ).to.equal( null );
             expect( utils.error ).not.to.have.been.called();
 
             // return a promise to tell Mocha/Chai that it is an async test case
             return promise
                 .then( () => {
-                    expect( element.errorMessage ).to.equal( '404 Not Found' );
+                    expect( element.errorMessageKey ).to.equal( 'error.404' );
 
                     expect( utils.error ).to.have.been.called();
                     const error = utils.error.lastCall.firstArg;
                     expect( error instanceof Error ).to.be.true();
-                    expect( error.message ).to.equal( '404 Not Found' );
+                    expect( error.message ).to.equal( 'error.404' );
                     expect( window.fetch ).to.have.been.calledWith( 'https://missing.api.com' );
                 } );
         } );

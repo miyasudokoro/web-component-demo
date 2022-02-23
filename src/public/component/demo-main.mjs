@@ -3,20 +3,30 @@ import { CUSTOM_EVENT, SERVER_LOCATION, PAGE } from '../service/constants.mjs';
 import helper from '../service/helper.mjs';
 import auth from '../service/auth.mjs';
 import DemoError from '../component/demo-error.mjs';
+import DemoSignIn from '../component/demo-sign-in.mjs';
 
 const TEMPLATE = `
+<style>
+body {
+    font-family: Verdana, sans-serif;
+}
+body[lang=ja-jp] {
+    font-family: Meiryo, monospace;
+}
+</style>
+<a href="#index" i18n="home"></a>
 <nav>
     <ul>
-        <li>Animals
+        <li><span i18n="animals"></span>
             <ul>
-                <li><a href="#animal/cats">Cats</a></li>
-                <li><a href="#animal/dogs">Dogs</a></li>
+                <li><a href="#animal/cats" i18n="cat.pictures"></a></li>
+                <li><a href="#animal/dogs" i18n="dog.pictures"></a></li>
             </ul>
         </li>
-        <li>Nature
+        <li><span i18n="nature"></span>
             <ul>
-                <li><a href="#natural/astronomy">Astronomy</a></li>
-                <li><a href="#natural/oops">Dividing by Zero</a></li>
+                <li><a href="#natural/astronomy" i18n="astronomy.pictures"></a></li>
+                <li><a href="#natural/oops" i18n="zero.pictures"></a></li>
             </ul>
         </li>
     </ul>
@@ -57,12 +67,18 @@ class DemoMain extends HTMLElement {
     connectedCallback() {
         this.innerHTML = TEMPLATE;
         this.main = this.querySelector( 'main' );
+
         const remover = helper.safeEventListener( document, CUSTOM_EVENT.VIEW_CHANGE, e => {
             const { viewInfo } = e.detail;
             this.view = viewInfo.join( '/' );
         } );
         // make sure the event listener will be removed later to avoid zombie behavior and memory leaks
+        // note that this is needed because it's a listener on something outside itself
         helper.addRemoveListener( this, remover );
+
+        // this listener picks up events coming from child elements
+        this.addEventListener( CUSTOM_EVENT.VIEW_REFRESH, () => this.fetchPage( this.view ) );
+
         // now that the element has connected, changed attributes can process
         helper.connectedCallback( this );
     }
@@ -99,12 +115,12 @@ class DemoMain extends HTMLElement {
 
         return fetch( request )
             // example: fetching HTML from a server that might respond 404, 403, 401, etc. -- only 2XX have response.ok === true
-            .then( response => response.ok ? response.text() : Promise.reject( new Error( response.status + ' ' + response.statusText ) ) )
+            .then( response => response.ok ? response.text() : Promise.reject( new Error( `error.${response.status}` ) ) )
             .then( html => this.loadPage( html ) )
             .catch( e => this.displayError( e ) );
     }
 
-    /** Loads an HTML page into the main element.
+    /** Loads an HTML partial page into the main element.
      *
      * @param html {string} HTML page content
      */
@@ -139,9 +155,14 @@ class DemoMain extends HTMLElement {
         while ( this.main.firstChild ) {
             this.main.firstChild.remove();
         }
-        const error = new DemoError();
-        error.message = e.message;
-        this.main.append( error );
+        if ( e.message === 'error.401' ) {
+            const signIn = new DemoSignIn();
+            this.main.append( signIn );
+        } else {
+            const error = new DemoError();
+            error.messageKey = e.message;
+            this.main.append( error );
+        }
     }
 }
 

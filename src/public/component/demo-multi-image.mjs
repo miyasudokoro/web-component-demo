@@ -14,8 +14,12 @@ const TEMPLATE = `
 <button name="add">Add image</button>
 `;
 
-
+/** @class DemoMultiImage
+ * @extends HTMLElement
+ * @description Shows multiple DemoImage elements.
+ */
 class DemoMultiImage extends HTMLElement {
+    /** Constructor */
     constructor() {
         super();
         // here is the shadow root
@@ -25,36 +29,55 @@ class DemoMultiImage extends HTMLElement {
         } );
     }
 
+    /** @type {string} */
     static get tag() {
         return 'demo-multi-image';
     }
 
+    /** @type {Array<string>} */
     static get observedAttributes() {
         return [ 'endpoint', 'base' ];
     }
 
+    /** The endpoint to call to get the information about the image/video.
+     * @type {string}
+     */
     get endpoint() {
         return this.getAttribute( 'endpoint' );
     }
+    /** @alias DemoMultiImage.prototype~endpoint */
     set endpoint( endpoint ) {
-        this.setAttribute( 'endpoint', endpoint );
+        if ( !endpoint ) {
+            this.removeAttribute( 'endpoint' );
+        } else {
+            this.setAttribute( 'endpoint', endpoint );
+        }
     }
 
+    /** The base URL, if any.
+     * @type {string}
+     */
     get base() {
-        return this.getAttribute( 'base' ) || '';
+        return this.getAttribute( 'base' );
     }
+    /** @alias DemoMultiImage.prototype~base */
     set base( base ) {
-        this.setAttribute( 'base', base || '' );
+        if ( !base ) {
+            this.removeAttribute( 'base' );
+        } else {
+            this.setAttribute( 'base', base );
+        }
     }
 
+    /** @override */
     connectedCallback() {
         this.shadowRoot.innerHTML = TEMPLATE;
         this.add = this.shadowRoot.querySelector( '[name=add]' );
         this.template = this.shadowRoot.querySelector( 'template' );
 
-        // you can listen to internal events on shadowRoot
-        // because it is a DocumentFragment, events will not all bubble normally to `this`
-        helper.safeEventListener( this.shadowRoot, 'click', e => {
+        // it's best to listen to internal events on shadowRoot
+        // because it is a DocumentFragment, not all events will bubble normally to `this`
+        this.shadowRoot.addEventListener( 'click', e => {
             if ( e.target.name === 'add' ) {
                 this.addNewImage();
             } else if ( e.target.name === 'remove' ) {
@@ -64,10 +87,21 @@ class DemoMultiImage extends HTMLElement {
         helper.connectedCallback( this );
     }
 
+    /** @override */
     disconnectedCallback() {
         helper.disconnectedCallback( this );
     }
 
+    /** @override */
+    attributeChangedCallback( name, _, current ) {
+        // passing the state change to the child elements
+        Array.from( this.shadowRoot.querySelectorAll( DemoImageInfo.tag ) )
+            .forEach( image => ( image[ name ] = current ) );
+    }
+
+    /** Adds another DemoImageInfo element and its remover button.
+     *
+     */
     addNewImage() {
         // note: if you clone this.template.content, because it is a DocumentFragment and not
         // an Element, it will not bubble normal events up
@@ -77,7 +111,10 @@ class DemoMultiImage extends HTMLElement {
             .cloneNode( true ); // clone that wrapper and all children
 
         const info = clone.querySelector( DemoImageInfo.tag );
+
+        // pass the state of this element to the new child element
         helper.copyAttributes( this, info );
+
         // note this weirdness: it's not really a DemoImageInfo until it's appended
         console.assert( !( info instanceof DemoImageInfo ) );
         this.shadowRoot.append( clone );

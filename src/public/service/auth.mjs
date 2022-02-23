@@ -1,14 +1,26 @@
+import { SERVER_LOCATION } from './constants.mjs';
 
-const FAKE_TOKEN = 'my-fake-token';
 let token;
 
 /** Logs in the user.
+ * @param form {DemoSignIn} the form
  * @returns {Promise}
  */
-function logIn() {
-    token = FAKE_TOKEN;
-    // in real life, this would be an asynchronous task
-    return Promise.resolve();
+function logIn( form ) {
+    const request = new Request( [ SERVER_LOCATION, 'login' ].join( '/' ), {
+        method: 'POST',
+        body: JSON.stringify( form ) // see DemoSignIn toJSON
+    } );
+    return fetch( request )
+        .then( response => {
+            return response.json().then( json => {
+                if ( response.ok ) {
+                    token = json.access_token;
+                } else {
+                    throw json;
+                }
+            } );
+        } );
 }
 
 /** Logs out the user.
@@ -16,7 +28,7 @@ function logIn() {
  */
 function logOut() {
     token = undefined;
-    // in real life, this would be an asynchronous task
+    // with a real authentication provider, this would probably be an asynchronous task
     return Promise.resolve();
 }
 

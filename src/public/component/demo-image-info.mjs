@@ -12,7 +12,7 @@ const MEDIA_TYPE = {
 const TEMPLATE = `
 <style>
 :host {
-    --demo-error-text-color: orange;
+    --demo-error-text-color: tomato;
 }
 img {
     max-width: 600px;
@@ -65,7 +65,7 @@ class DemoImageInfo extends HTMLElement {
 
     /** @type Array<string> */
     static get observedAttributes() {
-        return [ 'endpoint', 'base', 'media-type', 'copyright', 'title', 'explanation', 'tags', 'date', 'url', 'base', 'error-message' ];
+        return [ 'endpoint', 'base', 'media-type', 'copyright', 'title', 'explanation', 'tags', 'date', 'url', 'base', 'error-message-key' ];
     }
 
     /** The endpoint to call to get the information about the image/video.
@@ -224,15 +224,15 @@ class DemoImageInfo extends HTMLElement {
     /** An error message.
      * @type {string}
      */
-    get errorMessage() {
-        return this.getAttribute( 'error-message' );
+    get errorMessageKey() {
+        return this.getAttribute( 'error-message-key' );
     }
-    /** @alias DemoImageInfo.prototype~errorMessage */
-    set errorMessage( errorMessage ) {
-        if ( !errorMessage ) {
-            this.removeAttribute( 'error-message' );
+    /** @alias DemoImageInfo.prototype~errorMessageKey */
+    set errorMessageKey( errorMessageKey ) {
+        if ( !errorMessageKey ) {
+            this.removeAttribute( 'error-message-key' );
         } else {
-            this.setAttribute( 'error-message', errorMessage );
+            this.setAttribute( 'error-message-key', errorMessageKey );
         }
     }
 
@@ -346,9 +346,9 @@ class DemoImageInfo extends HTMLElement {
     /** Displays an error message.
      *
      */
-    errorMessageAttributeChanged( message ) {
+    errorMessageKeyAttributeChanged( messageKey ) {
         const error = this.shadowRoot.querySelector( DemoError.tag );
-        error.message = message;
+        error.messageKey = messageKey;
     }
 
     /** Fetches from the given endpoint.
@@ -358,11 +358,11 @@ class DemoImageInfo extends HTMLElement {
      */
     fetchFromEndpoint( endpoint ) {
         return fetch( endpoint )
-            .then( response => response.ok ? response.json() : Promise.reject( new Error( response.status + ' ' + response.statusText ) ) )
+            .then( response => response.ok ? response.json() : Promise.reject( new Error( `error.${response.status}` ) ) )
             .then( json => this.displayContent( json ) )
             .catch( e => {
                 utils.error( e );
-                this.errorMessage = e.message;
+                this.errorMessageKey = e.message;
             } );
     }
 
