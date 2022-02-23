@@ -1,6 +1,9 @@
 # web-component-demo
 Demonstration of vanilla web components and their unit tests.
 
+## Running the app
+TODO - will write this section soon
+
 ## Vanilla tools
 - Custom HTML elements
 - Shadow DOM
