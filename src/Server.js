@@ -211,6 +211,7 @@ class Server {
                     'access_token': FAKE_ACCESS_TOKEN
                 } ) );
                 resolve();
+                return;
             }
             this._respond( response, 403, 'login.json', JSON.stringify( {
                 messageKey: 'error.400'
