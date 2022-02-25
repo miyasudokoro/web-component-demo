@@ -11,9 +11,18 @@ describe( 'component/demo-favorite-images', () => {
         } );
     }
 
+    before( () => {
+        // because we can't stub localStorage in Firefox, we'll use real localStorage
+        localStorage.clear();
+    } );
+
+    afterEach( () => {
+        localStorage.clear();
+    } );
+
     it( 'gets favorites from local storage', () => {
         const content = [ IMG ];
-        sinon.stub( localStorage, 'getItem' ).returns( JSON.stringify( content ) );
+        localStorage.setItem( DemoFavoriteImages.tag, JSON.stringify( content ) );
 
         const favorite = new DemoFavoriteImages();
         document.body.append( favorite );
@@ -37,7 +46,7 @@ describe( 'component/demo-favorite-images', () => {
 
         beforeEach( () => {
             const content = [ IMG ];
-            sinon.stub( localStorage, 'getItem' ).returns( JSON.stringify( content ) );
+            localStorage.setItem( DemoFavoriteImages.tag, JSON.stringify( content ) );
 
             favorite = new DemoFavoriteImages();
             document.body.append( favorite );

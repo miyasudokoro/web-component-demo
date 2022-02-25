@@ -56,6 +56,7 @@ p {
 <p remove i18n-title="remove">&#128465;</p>
 `;
 
+const TAG = 'demo-favorite-images';
 const REARRANGE = 'favorite-rearrange';
 
 class DemoFavoriteImages extends HTMLElement {
@@ -69,7 +70,7 @@ class DemoFavoriteImages extends HTMLElement {
 
     /** @type {string} */
     static get tag() {
-        return 'demo-favorite-images';
+        return TAG;
     }
 
     /** @override */
@@ -82,7 +83,7 @@ class DemoFavoriteImages extends HTMLElement {
         // example of listening for the slotchange event
         const slot = this.shadowRoot.querySelector( 'slot' );
         slot.addEventListener( 'slotchange', e => {
-            localStorage.setItem( 'demo-favorite-images', JSON.stringify(
+            localStorage.setItem( TAG, JSON.stringify(
                 e.target.assignedElements().map( el => el.src )
             ) );
         } );
@@ -197,7 +198,7 @@ class DemoFavoriteImages extends HTMLElement {
      * @private
      */
     _displaySavedFavorites() {
-        const existing = localStorage.getItem( 'demo-favorite-images' );
+        const existing = localStorage.getItem( TAG );
         if ( existing ) {
             JSON.parse( existing ).forEach( src => this.addToList( src ) );
         }
