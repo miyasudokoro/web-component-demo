@@ -77,7 +77,7 @@ describe( 'component/demo-main', () => {
             return demo.fetchPage( 'dogs' )
                 .then( () => {
                     expect( demo.displayError ).to.have.been.called();
-                    const el = demo.querySelector( DemoError.tag );
+                    const el = demo.shadowRoot.querySelector( DemoError.tag );
                     expect( el.messageKey ).to.equal( 'error.403' );
                 } );
         } );

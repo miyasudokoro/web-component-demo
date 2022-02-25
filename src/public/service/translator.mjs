@@ -1,4 +1,7 @@
-
+/** @module translator
+ * @description automatically translates on the page
+ * Note: There is a defect with nested shadow roots in this version ... working on it :)
+ */
 const DEFAULT_LOCALE = 'en-us';
 let observer;
 let currentLocale;
@@ -6,7 +9,12 @@ let translations;
 const shadowRoots = new WeakSet();
 
 const OBSERVATION_ATTRIBUTES = { childList: true, subtree: true, attributes: true };
+const INSERT = /{{(.+?)}}/g;
 
+/** Initializes the translator.
+ *
+ * @returns {Promise}
+ */
 function initialize() {
     return fetchTranslations()
         .then( response => {
@@ -18,6 +26,9 @@ function initialize() {
         } );
 }
 
+/** Resets the translator for unit testing.
+ *
+ */
 function reset() {
     translations = undefined;
     observer && observer.disconnect();
@@ -26,12 +37,18 @@ function reset() {
     window.removeEventListener( 'languagechange', setCurrentLocale );
 }
 
+/** Fetches the translations.
+ *
+ * @returns {Promise}
+ * @private
+ */
 function fetchTranslations() {
     const response = {
         'en-us': {
-            'dog.pictures': 'Dog pictures',
-            'cat.pictures': 'Cat pictures',
-            'astronomy.pictures': 'Astronomy Image of the Day',
+            'animal.pictures': 'Pictures of {{animals}}',
+            'cats': 'cats',
+            'dogs': 'dogs',
+            'astronomy.pictures': 'Astronomy image of the day',
             'zero.pictures': 'Dividing by zero',
             'source.api': 'Source API: ',
             'home': 'Home page',
@@ -45,11 +62,17 @@ function fetchTranslations() {
             'error.401': 'You are not signed in',
             'error.403': 'Action not allowed',
             'error.404': 'Page not found',
-            'error.500': 'Server error'
+            'error.500': 'Server error',
+            'favorites': 'Favorite images',
+            'drop.here': 'Drag and drop here',
+            'remove': 'Drop here to remove from favorites',
+            'slideshow': 'Slideshow',
+            'none': 'None'
         },
         'es-es': {
-            'dog.pictures': 'Fotos de perros',
-            'cat.pictures': 'Fotos de gatos',
+            'animal.pictures': 'Fotos de {{animals}}',
+            'cats': 'gatos',
+            'dogs': 'perros',
             'astronomy.pictures': 'Imagen astronómica del día',
             'zero.pictures': 'Dividiendo por cero',
             'source.api': 'API de origen: ',
@@ -64,11 +87,17 @@ function fetchTranslations() {
             'error.401': 'No has iniciado sesión',
             'error.403': 'Acción no permitida',
             'error.404': 'Página no encontrada',
-            'error.500': 'Error del servidor'
+            'error.500': 'Error del servidor',
+            'favorites': 'Imágenes favoritas',
+            'drop.here': 'Arrastra y suelta aquí',
+            'remove': 'Soltar aquí para eliminar de favoritos',
+            'slideshow': 'Diapositivas',
+            'none': 'Ninguna'
         },
         'ja-jp': {
-            'dog.pictures': '犬の写真',
-            'cat.pictures': '猫の写真',
+            'animal.pictures': '{{animals}}の写真',
+            'cats': '猫',
+            'dogs': '犬',
             'astronomy.pictures': '今日の天文画像',
             'zero.pictures': 'ゼロ除算',
             'source.api': 'ソースAPI：',
@@ -83,16 +112,27 @@ function fetchTranslations() {
             'error.401': 'サインインしていません',
             'error.403': '許可されていません',
             'error.404': 'ページが見つかりません',
-            'error.500': 'サーバーエラー'
+            'error.500': 'サーバーエラー',
+            'favorites': 'お気に入りの画像',
+            'drop.here': 'ここにドラッグアンドドロップします',
+            'remove': 'ここにドロップしてお気に入りから削除します',
+            'slideshow': 'スライドショー',
+            'none': '無し'
         }
     };
     return Promise.resolve( response );
 }
 
+/** Creates a listener on language change.
+ * @private
+ */
 function createListener() {
     window.addEventListener( 'languagechange', setCurrentLocale );
 }
 
+/** Sets the current locale in various state locations.
+ * @private
+ */
 function setCurrentLocale() {
     const locale = findCurrentLocale();
     if ( locale !== currentLocale ) {
@@ -103,6 +143,10 @@ function setCurrentLocale() {
     }
 }
 
+/** Finds the user's current locale.
+ * @private
+ * @returns {string}
+ */
 function findCurrentLocale() {
     const locales = navigator.languages.map( loc => loc.toLowerCase() );
     for ( let i = 0; i < locales.length; i++ ) {
@@ -121,7 +165,7 @@ function findCurrentLocale() {
 }
 
 /** Creates a mutation observer.
- *
+ * @private
  */
 function createObserver() {
     observer = new MutationObserver( mutations => {
@@ -143,6 +187,7 @@ function createObserver() {
 /** Translates the parent element and its children.
  *
  * @param parent {Node} the parent node
+ * @private
  */
 function deepTranslate( parent ) {
     const iterator = document.createNodeIterator( parent, NodeFilter.SHOW_ELEMENT );
@@ -164,17 +209,24 @@ function deepTranslate( parent ) {
 /** Translates a node's text and/or attribute content.
  *
  * @param element {Node} the element that may need translating
+ * @private
  */
 function translateNode( element ) {
     element instanceof Element && Array.from( element.attributes )
         .filter( attr => attr.name.startsWith( 'i18n' ) )
         .forEach( ( { name, value } ) => {
-            const text = translations[ currentLocale ][ value ] || translations[ DEFAULT_LOCALE ][ value ];
+            const text = ( translations[ currentLocale ][ value ] || translations[ DEFAULT_LOCALE ][ value ] || '' )
+                .replace( INSERT, ( _, property ) => {
+                    const insert = element.getAttribute( 'i18n-insert-' + property );
+                    return translations[ currentLocale ][ insert ] || translations[ DEFAULT_LOCALE ][ insert ] || insert || '';
+                } );
             if ( name === 'i18n' ) {
                 element.textContent = text;
             } else {
-                const attrName = name.split( 'i18n-' )[ 1 ];
-                element.setAttribute( attrName, text );
+                const attrName = name.split( '-' )[ 1 ];
+                if ( attrName && attrName !== 'insert' ) {
+                    element.setAttribute( attrName, text );
+                }
             }
         } );
 }

@@ -4,23 +4,37 @@ import helper from '../service/helper.mjs';
 import auth from '../service/auth.mjs';
 import DemoError from '../component/demo-error.mjs';
 import DemoSignIn from '../component/demo-sign-in.mjs';
+import DemoFavoriteImages from '../component/demo-favorite-images.mjs';
 
 const TEMPLATE = `
 <style>
-body {
-    font-family: Verdana, sans-serif;
+:host {
+    display: grid;
+    grid-template-columns: minmax(max-content, 20%) auto minmax(max-content, 20%);
+    width: 100vw;
+    box-sizing: border-box;
 }
-body[lang=ja-jp] {
-    font-family: Meiryo, monospace;
+h1 {
+    font-size: 3em;
+    font-weight: normal;
+}
+ul {
+    list-style: none;
+}
+nav, main {
+    padding: 20px;
+    box-sizing: border-box;
+    overflow: auto;
+    max-height: 100vh;
 }
 </style>
-<a href="#index" i18n="home"></a>
 <nav>
     <ul>
+        <li><a href="#index" i18n="home"></a></li>
         <li><span i18n="animals"></span>
             <ul>
-                <li><a href="#animal/cats" i18n="cat.pictures"></a></li>
-                <li><a href="#animal/dogs" i18n="dog.pictures"></a></li>
+                <li><a href="#animal/cats" i18n="animal.pictures" i18n-insert-animals="cats"></a></li>
+                <li><a href="#animal/dogs" i18n="animal.pictures" i18n-insert-animals="dogs"></a></li>
             </ul>
         </li>
         <li><span i18n="nature"></span>
@@ -29,9 +43,11 @@ body[lang=ja-jp] {
                 <li><a href="#natural/oops" i18n="zero.pictures"></a></li>
             </ul>
         </li>
+        <li><a href="#slideshow/" i18n="slideshow"></a></li>
     </ul>
 </nav>
 <main></main>
+<${DemoFavoriteImages.tag}></${DemoFavoriteImages.tag}>
 `;
 
 /** @class DemoMain
@@ -39,7 +55,13 @@ body[lang=ja-jp] {
  * @description Runs the demo. Contains the navigation and main display area.
  */
 class DemoMain extends HTMLElement {
-    // note: this is an example of a custom element with no shadow DOM
+    /** Constructor */
+    constructor() {
+        super();
+        this.attachShadow( {
+            mode: 'open'
+        } );
+    }
 
     /** @type {string} */
     static get tag() {
@@ -65,8 +87,8 @@ class DemoMain extends HTMLElement {
 
     /** @override */
     connectedCallback() {
-        this.innerHTML = TEMPLATE;
-        this.main = this.querySelector( 'main' );
+        this.shadowRoot.innerHTML = TEMPLATE;
+        this.main = this.shadowRoot.querySelector( 'main' );
 
         const remover = helper.safeEventListener( document, CUSTOM_EVENT.VIEW_CHANGE, e => {
             const { viewInfo } = e.detail;

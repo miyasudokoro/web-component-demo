@@ -3,13 +3,26 @@ import { CUSTOM_EVENT } from '../service/constants.mjs';
 
 const TEMPLATE = `
 <style>
+    fieldset {
+        border: none;
+    }
     fieldset label {
         display: flex;
         width: 300px;
         justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    fieldset input {
+        padding: 4px;
     }
     fieldset button {
         display: block;
+        padding: 10px;
+        font-size: 1em;
+        background-color: azure;
+        margin: 5px 0;
+        border-radius: 10px;
+        width: 300px;
     }
 </style>
 <h1 i18n="sign.in.to.view"></h1>

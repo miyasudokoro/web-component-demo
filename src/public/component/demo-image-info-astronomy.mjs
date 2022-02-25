@@ -2,6 +2,7 @@ import DemoImageInfo from './demo-image-info.mjs';
 import helper from '../service/helper.mjs';
 import utils from '../service/utils.mjs';
 
+// note that DEMO_KEY is restricted to a certain number of requests
 export const ENDPOINT = 'https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY';
 
 const INSERT = `
@@ -14,6 +15,11 @@ figcaption > [type=date] {
 figcaption > [type=date]:not([value]) {
     display: none;
     visibility: hidden;
+}
+img {
+    max-width: 90%;
+    display: block;
+    margin: auto;
 }
 </style>
 `;

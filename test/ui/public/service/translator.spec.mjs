@@ -7,22 +7,22 @@ const SPAIN = 'es-ES';
 const JAPAN = 'ja-JP';
 
 const base = `
-<h1 i18n="dog.pictures"></h1>
+<h1 i18n="animal.pictures" i18n-insert-animals="dogs"></h1>
 <aside><span i18n="source.api"></span><a href="">Some API name</a></aside>
 `;
 
 const fakeEN = `
-<h1 i18n="dog.pictures">Dog pictures</h1>
+<h1 i18n="animal.pictures" i18n-insert-animals="dogs">Pictures of dogs</h1>
 <aside><span i18n="source.api">Source API: </span><a href="">Some API name</a></aside>
 `;
 
 const fakeES = `
-<h1 i18n="dog.pictures">Fotos de perros</h1>
+<h1 i18n="animal.pictures" i18n-insert-animals="dogs">Fotos de perros</h1>
 <aside><span i18n="source.api">API de origen: </span><a href="">Some API name</a></aside>
 `;
 
 const fakeJA = `
-<h1 i18n="dog.pictures">犬の写真</h1>
+<h1 i18n="animal.pictures" i18n-insert-animals="dogs">犬の写真</h1>
 <aside><span i18n="source.api">ソースAPI：</span><a href="">Some API name</a></aside>
 `;
 
@@ -93,8 +93,9 @@ describe( 'service/translator', () => {
 
         it( 'translates normal element added to the page', () => {
             const p = document.createElement( 'p' );
-            p.setAttribute( 'i18n-title', 'cat.pictures' );
-            p.setAttribute( 'i18n', 'cat.pictures' );
+            p.setAttribute( 'i18n-title', 'animal.pictures' );
+            p.setAttribute( 'i18n', 'animal.pictures' );
+            p.setAttribute( 'i18n-insert-animals', 'cats' );
 
             const promise = awaitAttributeChange( p, 'title' );
 
@@ -112,8 +113,9 @@ describe( 'service/translator', () => {
             div.attachShadow( { mode: 'open' } );
 
             const p = document.createElement( 'p' );
-            p.setAttribute( 'i18n-title', 'cat.pictures' );
-            p.setAttribute( 'i18n', 'cat.pictures' );
+            p.setAttribute( 'i18n-title', 'animal.pictures' );
+            p.setAttribute( 'i18n', 'animal.pictures' );
+            p.setAttribute( 'i18n-insert-animals', 'cats' );
 
             div.shadowRoot.append( p );
 
@@ -133,7 +135,8 @@ describe( 'service/translator', () => {
 
             const promise = awaitTextChange( h1 );
 
-            h1.setAttribute( 'i18n', 'cat.pictures' );
+            h1.setAttribute( 'i18n', 'animal.pictures' );
+            h1.setAttribute( 'i18n-insert-animals', 'cats' );
 
             return promise.then( () => {
                 expect( h1.textContent ).to.equal( 'Fotos de gatos' );

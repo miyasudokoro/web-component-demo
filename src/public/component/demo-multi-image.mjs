@@ -3,15 +3,32 @@ import DemoImageInfo from './demo-image-info.mjs';
 import helper from '../service/helper.mjs';
 
 const TEMPLATE = `
+<style>
+div {
+    display: grid;
+    max-width: 100%;
+    grid-template-columns: repeat(auto-fill, 350px);
+    justify-content: space-between;
+}
+button {
+    padding: 10px 15px;
+    font-size: 1em;
+    background-color: aliceblue;
+    margin: 5px 0;
+}
+</style>
 <template>
     <!-- note: it's easier to work with templates if you have a wrapper element inside -->
     <section>
         <${DemoImageInfo.tag}></${DemoImageInfo.tag}>
-        <button name="remove">Remove image</button>
+        <button name="remove"> x </button>
     </section>
 </template>
 
-<button name="add">Add image</button>
+<button name="add"> + </button>
+<div>
+
+</div>
 `;
 
 /** @class DemoMultiImage
@@ -27,6 +44,7 @@ class DemoMultiImage extends HTMLElement {
             mode: 'open'
             // note: some components need delegatesFocus: true
         } );
+        this.shadowRoot.innerHTML = TEMPLATE;
     }
 
     /** @type {string} */
@@ -71,7 +89,6 @@ class DemoMultiImage extends HTMLElement {
 
     /** @override */
     connectedCallback() {
-        this.shadowRoot.innerHTML = TEMPLATE;
         this.add = this.shadowRoot.querySelector( '[name=add]' );
         this.template = this.shadowRoot.querySelector( 'template' );
 
@@ -117,7 +134,8 @@ class DemoMultiImage extends HTMLElement {
 
         // note this weirdness: it's not really a DemoImageInfo until it's appended
         console.assert( !( info instanceof DemoImageInfo ) );
-        this.shadowRoot.append( clone );
+        const div = this.shadowRoot.querySelector( 'div' );
+        div.append( clone );
         console.assert( info instanceof DemoImageInfo );
     }
 }

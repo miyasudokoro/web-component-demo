@@ -1,3 +1,6 @@
+/** @module router
+ * @description Handles navigation via URL hash.
+ */
 
 import { DEFAULT_VIEW, CUSTOM_EVENT } from './constants.mjs';
 
