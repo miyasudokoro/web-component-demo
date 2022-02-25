@@ -228,12 +228,17 @@ class Server {
      */
     _getPathName( request ) {
         let pathName = request.url;
-        const isPage = pathName.startsWith( '/page' );
-        if ( pathName.endsWith( '/' ) ) {
-            pathName += isPage ? 'index.htm' : 'index.html';
-        } else if ( isPage ) {
-            pathName += '.htm';
+        if ( pathName === '/' ) {
+            return 'index.html';
         }
+        if ( pathName.endsWith( '/' ) ) {
+            return pathName + 'index.htm';
+        }
+        const ext = path.extname( pathName );
+        if ( !ext ) {
+            return pathName + '.htm';
+        }
+
         return pathName;
     }
 

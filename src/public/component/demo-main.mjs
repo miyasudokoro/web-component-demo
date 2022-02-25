@@ -43,6 +43,7 @@ nav, main {
                 <li><a href="#natural/oops" i18n="zero.pictures"></a></li>
             </ul>
         </li>
+        <li><a href="#slideshow/" i18n="slideshow"></a></li>
     </ul>
 </nav>
 <main></main>

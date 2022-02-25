@@ -1,4 +1,7 @@
-
+/** @module translator
+ * @description automatically translates on the page
+ * Note: There is a defect with nested shadow roots in this version ... working on it :)
+ */
 const DEFAULT_LOCALE = 'en-us';
 let observer;
 let currentLocale;
@@ -8,6 +11,10 @@ const shadowRoots = new WeakSet();
 const OBSERVATION_ATTRIBUTES = { childList: true, subtree: true, attributes: true };
 const INSERT = /{{(.+?)}}/g;
 
+/** Initializes the translator.
+ *
+ * @returns {Promise}
+ */
 function initialize() {
     return fetchTranslations()
         .then( response => {
@@ -19,6 +26,9 @@ function initialize() {
         } );
 }
 
+/** Resets the translator for unit testing.
+ *
+ */
 function reset() {
     translations = undefined;
     observer && observer.disconnect();
@@ -27,6 +37,11 @@ function reset() {
     window.removeEventListener( 'languagechange', setCurrentLocale );
 }
 
+/** Fetches the translations.
+ *
+ * @returns {Promise}
+ * @private
+ */
 function fetchTranslations() {
     const response = {
         'en-us': {
@@ -50,7 +65,9 @@ function fetchTranslations() {
             'error.500': 'Server error',
             'favorites': 'Favorite images',
             'drop.here': 'Drag and drop here',
-            'remove': 'Remove from favorites'
+            'remove': 'Drop here to remove from favorites',
+            'slideshow': 'Slideshow',
+            'none': 'None'
         },
         'es-es': {
             'animal.pictures': 'Fotos de {{animals}}',
@@ -71,9 +88,11 @@ function fetchTranslations() {
             'error.403': 'Acción no permitida',
             'error.404': 'Página no encontrada',
             'error.500': 'Error del servidor',
-            'favorites': 'Favorite images',
-            'drop.here': 'Drag and drop here',
-            'remove': 'Remove from favorites'
+            'favorites': 'Imágenes favoritas',
+            'drop.here': 'Arrastra y suelta aquí',
+            'remove': 'Soltar aquí para eliminar de favoritos',
+            'slideshow': 'Diapositivas',
+            'none': 'Ninguna'
         },
         'ja-jp': {
             'animal.pictures': '{{animals}}の写真',
@@ -94,18 +113,26 @@ function fetchTranslations() {
             'error.403': '許可されていません',
             'error.404': 'ページが見つかりません',
             'error.500': 'サーバーエラー',
-            'favorites': 'Favorite images',
-            'drop.here': 'Drag and drop here',
-            'remove': 'Remove from favorites'
+            'favorites': 'お気に入りの画像',
+            'drop.here': 'ここにドラッグアンドドロップします',
+            'remove': 'ここにドロップしてお気に入りから削除します',
+            'slideshow': 'スライドショー',
+            'none': '無し'
         }
     };
     return Promise.resolve( response );
 }
 
+/** Creates a listener on language change.
+ * @private
+ */
 function createListener() {
     window.addEventListener( 'languagechange', setCurrentLocale );
 }
 
+/** Sets the current locale in various state locations.
+ * @private
+ */
 function setCurrentLocale() {
     const locale = findCurrentLocale();
     if ( locale !== currentLocale ) {
@@ -116,6 +143,10 @@ function setCurrentLocale() {
     }
 }
 
+/** Finds the user's current locale.
+ * @private
+ * @returns {string}
+ */
 function findCurrentLocale() {
     const locales = navigator.languages.map( loc => loc.toLowerCase() );
     for ( let i = 0; i < locales.length; i++ ) {
@@ -134,7 +165,7 @@ function findCurrentLocale() {
 }
 
 /** Creates a mutation observer.
- *
+ * @private
  */
 function createObserver() {
     observer = new MutationObserver( mutations => {
@@ -156,6 +187,7 @@ function createObserver() {
 /** Translates the parent element and its children.
  *
  * @param parent {Node} the parent node
+ * @private
  */
 function deepTranslate( parent ) {
     const iterator = document.createNodeIterator( parent, NodeFilter.SHOW_ELEMENT );
@@ -177,6 +209,7 @@ function deepTranslate( parent ) {
 /** Translates a node's text and/or attribute content.
  *
  * @param element {Node} the element that may need translating
+ * @private
  */
 function translateNode( element ) {
     element instanceof Element && Array.from( element.attributes )

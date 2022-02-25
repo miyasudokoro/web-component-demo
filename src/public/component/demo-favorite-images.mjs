@@ -35,13 +35,18 @@ p {
     color: blue;
 }
 
-/* styling inside a slot is limited */
+/* styling inside a slot is limited but possible */
 ::slotted(img) {
     display: block;
     width: 180px;
     height: 180px;
-    object-fit: contain;
+    object-fit: scale-down;
     margin: auto;
+    transition: all .5s ease-in-out;
+}
+::slotted(img[clicked]) {
+    height: 600px;
+    width: 600px;
 }
 ::slotted(img[active]) {
     filter: opacity(30%);
@@ -99,6 +104,7 @@ class DemoFavoriteImages extends HTMLElement {
     addToList( src ) {
         const img = document.createElement( 'img' );
         img.src = src;
+        img.addEventListener( 'click', () => img.toggleAttribute( 'clicked' ) );
         img.addEventListener( 'dragstart', e => {
             e.dataTransfer.setData( REARRANGE, img.src );
         } );
@@ -118,11 +124,20 @@ class DemoFavoriteImages extends HTMLElement {
             }
             e.preventDefault();
             e.stopPropagation();
-            const src = e.dataTransfer.getData( 'text/plain' );
-            // note: it's a direct child, not a shadowRoot child
-            const el = this.querySelector( `[src="${src}"]` );
-            this.insertBefore( el, img );
             img.toggleAttribute( 'active', false );
+            const src = e.dataTransfer.getData( 'text/plain' );
+            let n = img;
+            let p = img;
+            while ( ( n = n?.nextElementSibling ) || ( p = p?.previousElementSibling ) ) {
+                if ( n?.src === src ) {
+                    this.insertBefore( n, img );
+                    return;
+                }
+                if ( p?.src === src ) {
+                    this.insertBefore( p, img.nextSibling );
+                    return;
+                }
+            }
         } );
 
         // note that if I append to this element, not its shadow root, it goes into the slot

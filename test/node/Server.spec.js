@@ -248,6 +248,8 @@ describe( 'Server.js', () => {
                 it( 'gets page template index.htm using path /page/', () => {
                     return expectHTMLFile( 'public/page/index.htm', '/page/' );
                 } );
+
+                it( 'gets slide show manifest')
             } );
 
             describe( 'private HTML pages', () => {

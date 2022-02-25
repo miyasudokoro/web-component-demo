@@ -11,7 +11,7 @@ div {
     justify-content: space-between;
 }
 button {
-    padding: 10px;
+    padding: 10px 15px;
     font-size: 1em;
     background-color: aliceblue;
     margin: 5px 0;
@@ -21,11 +21,11 @@ button {
     <!-- note: it's easier to work with templates if you have a wrapper element inside -->
     <section>
         <${DemoImageInfo.tag}></${DemoImageInfo.tag}>
-        <button name="remove">Remove image</button>
+        <button name="remove"> x </button>
     </section>
 </template>
 
-<button name="add">Add image</button>
+<button name="add"> + </button>
 <div>
 
 </div>
@@ -44,6 +44,7 @@ class DemoMultiImage extends HTMLElement {
             mode: 'open'
             // note: some components need delegatesFocus: true
         } );
+        this.shadowRoot.innerHTML = TEMPLATE;
     }
 
     /** @type {string} */
@@ -88,7 +89,6 @@ class DemoMultiImage extends HTMLElement {
 
     /** @override */
     connectedCallback() {
-        this.shadowRoot.innerHTML = TEMPLATE;
         this.add = this.shadowRoot.querySelector( '[name=add]' );
         this.template = this.shadowRoot.querySelector( 'template' );
 
