@@ -2,7 +2,10 @@
 Demonstration of vanilla web components and their unit tests.
 
 ## Running the app
-TODO - will write this section soon
+1. `npm install` to get dependencies
+2. `npm run makeTestCertificates` to set up the localhost HTTPS certificates
+3. `npm run start:localhost` to start the server in localhost
+4. Navigate to `https://localhost:3000` in your browser
 
 ## Vanilla tools
 - Custom HTML elements
