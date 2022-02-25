@@ -11,8 +11,8 @@ div {
     justify-content: space-between;
 }
 button {
-    width: 40px;
-    height: 40px;
+    width: 2em;
+    height: 2em;
     text-align: center;
     font-size: 2em;
     background-color: aliceblue;

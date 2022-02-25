@@ -41,7 +41,7 @@ p {
     width: 180px;
     height: 180px;
     object-fit: scale-down;
-    margin: auto;
+    margin: 10px auto;
     transition: all .5s ease-in-out;
 }
 ::slotted(img[clicked]) {
