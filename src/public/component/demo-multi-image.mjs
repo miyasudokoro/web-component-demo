@@ -3,6 +3,20 @@ import DemoImageInfo from './demo-image-info.mjs';
 import helper from '../service/helper.mjs';
 
 const TEMPLATE = `
+<style>
+div {
+    display: grid;
+    max-width: 100%;
+    grid-template-columns: repeat(auto-fill, 350px);
+    justify-content: space-between;
+}
+button {
+    padding: 10px;
+    font-size: 1em;
+    background-color: aliceblue;
+    margin: 5px 0;
+}
+</style>
 <template>
     <!-- note: it's easier to work with templates if you have a wrapper element inside -->
     <section>
@@ -12,6 +26,9 @@ const TEMPLATE = `
 </template>
 
 <button name="add">Add image</button>
+<div>
+
+</div>
 `;
 
 /** @class DemoMultiImage
@@ -117,7 +134,8 @@ class DemoMultiImage extends HTMLElement {
 
         // note this weirdness: it's not really a DemoImageInfo until it's appended
         console.assert( !( info instanceof DemoImageInfo ) );
-        this.shadowRoot.append( clone );
+        const div = this.shadowRoot.querySelector( 'div' );
+        div.append( clone );
         console.assert( info instanceof DemoImageInfo );
     }
 }

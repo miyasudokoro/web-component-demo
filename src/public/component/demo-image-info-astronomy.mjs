@@ -15,6 +15,9 @@ figcaption > [type=date]:not([value]) {
     display: none;
     visibility: hidden;
 }
+img {
+    max-height: 600px;
+}
 </style>
 `;
 

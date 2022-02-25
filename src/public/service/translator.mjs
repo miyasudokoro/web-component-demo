@@ -6,6 +6,7 @@ let translations;
 const shadowRoots = new WeakSet();
 
 const OBSERVATION_ATTRIBUTES = { childList: true, subtree: true, attributes: true };
+const INSERT = /{{(.+?)}}/g;
 
 function initialize() {
     return fetchTranslations()
@@ -29,9 +30,10 @@ function reset() {
 function fetchTranslations() {
     const response = {
         'en-us': {
-            'dog.pictures': 'Dog pictures',
-            'cat.pictures': 'Cat pictures',
-            'astronomy.pictures': 'Astronomy Image of the Day',
+            'animal.pictures': 'Pictures of {{animals}}',
+            'cats': 'cats',
+            'dogs': 'dogs',
+            'astronomy.pictures': 'Astronomy image of the day',
             'zero.pictures': 'Dividing by zero',
             'source.api': 'Source API: ',
             'home': 'Home page',
@@ -45,11 +47,15 @@ function fetchTranslations() {
             'error.401': 'You are not signed in',
             'error.403': 'Action not allowed',
             'error.404': 'Page not found',
-            'error.500': 'Server error'
+            'error.500': 'Server error',
+            'favorites': 'Favorite images',
+            'drop.here': 'Drag and drop here',
+            'remove': 'Remove from favorites'
         },
         'es-es': {
-            'dog.pictures': 'Fotos de perros',
-            'cat.pictures': 'Fotos de gatos',
+            'animal.pictures': 'Fotos de {{animals}}',
+            'cats': 'gatos',
+            'dogs': 'perros',
             'astronomy.pictures': 'Imagen astronómica del día',
             'zero.pictures': 'Dividiendo por cero',
             'source.api': 'API de origen: ',
@@ -64,11 +70,15 @@ function fetchTranslations() {
             'error.401': 'No has iniciado sesión',
             'error.403': 'Acción no permitida',
             'error.404': 'Página no encontrada',
-            'error.500': 'Error del servidor'
+            'error.500': 'Error del servidor',
+            'favorites': 'Favorite images',
+            'drop.here': 'Drag and drop here',
+            'remove': 'Remove from favorites'
         },
         'ja-jp': {
-            'dog.pictures': '犬の写真',
-            'cat.pictures': '猫の写真',
+            'animal.pictures': '{{animals}}の写真',
+            'cats': '猫',
+            'dogs': '犬',
             'astronomy.pictures': '今日の天文画像',
             'zero.pictures': 'ゼロ除算',
             'source.api': 'ソースAPI：',
@@ -83,7 +93,10 @@ function fetchTranslations() {
             'error.401': 'サインインしていません',
             'error.403': '許可されていません',
             'error.404': 'ページが見つかりません',
-            'error.500': 'サーバーエラー'
+            'error.500': 'サーバーエラー',
+            'favorites': 'Favorite images',
+            'drop.here': 'Drag and drop here',
+            'remove': 'Remove from favorites'
         }
     };
     return Promise.resolve( response );
@@ -169,12 +182,18 @@ function translateNode( element ) {
     element instanceof Element && Array.from( element.attributes )
         .filter( attr => attr.name.startsWith( 'i18n' ) )
         .forEach( ( { name, value } ) => {
-            const text = translations[ currentLocale ][ value ] || translations[ DEFAULT_LOCALE ][ value ];
+            const text = ( translations[ currentLocale ][ value ] || translations[ DEFAULT_LOCALE ][ value ] || '' )
+                .replace( INSERT, ( _, property ) => {
+                    const insert = element.getAttribute( 'i18n-insert-' + property );
+                    return translations[ currentLocale ][ insert ] || translations[ DEFAULT_LOCALE ][ insert ] || insert || '';
+                } );
             if ( name === 'i18n' ) {
                 element.textContent = text;
             } else {
-                const attrName = name.split( 'i18n-' )[ 1 ];
-                element.setAttribute( attrName, text );
+                const attrName = name.split( '-' )[ 1 ];
+                if ( attrName && attrName !== 'insert' ) {
+                    element.setAttribute( attrName, text );
+                }
             }
         } );
 }

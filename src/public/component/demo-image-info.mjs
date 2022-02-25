@@ -15,7 +15,7 @@ const TEMPLATE = `
     --demo-error-text-color: tomato;
 }
 img {
-    max-width: 600px;
+    max-width: 100%;
 }
 iframe {
     width: 640px;
@@ -337,9 +337,9 @@ class DemoImageInfo extends HTMLElement {
     }
 
     /** Handles the url attribute changing.
-     *
+     * @param url {string} the URL of the image or video
      */
-    urlAttributeChanged() {
+    urlAttributeChanged( url ) {
         this._setMediaSource();
     }
 
