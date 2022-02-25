@@ -7,7 +7,7 @@ const TEMPLATE = `
     display: block;
     padding: 5px;
     font-size: 1em;
-    margin: 20px;
+    margin: 10px;
 }
 object {
     max-width: 100%;
@@ -25,14 +25,22 @@ object {
     display: grid;
     grid-template-columns: 50px auto 50px;
 }
+button {
+    font-size: 2em;
+    line-height: 2em;
+    background-color: lightblue;
+}
+button[disabled] {
+    background-color: lightgray;
+}
 </style>
 
 <slot name="choices"></slot>
 <object type="image/jpg"></object>
 <div navigation>
-    <button back disabled> &lt; </button>
+    <button back disabled> &#9204; </button>
     <div thumbnails></div>
-    <button forward disabled> &gt; </button>
+    <button forward disabled> &#9205; </button>
 </div>
 `;
 

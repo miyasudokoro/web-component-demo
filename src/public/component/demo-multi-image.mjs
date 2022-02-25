@@ -11,21 +11,26 @@ div {
     justify-content: space-between;
 }
 button {
-    padding: 10px 15px;
-    font-size: 1em;
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    font-size: 2em;
     background-color: aliceblue;
     margin: 5px 0;
+}
+button[name=add] {
+    background-color: lightblue;
 }
 </style>
 <template>
     <!-- note: it's easier to work with templates if you have a wrapper element inside -->
     <section>
+        <button name="remove"> &#10006; </button>
         <${DemoImageInfo.tag}></${DemoImageInfo.tag}>
-        <button name="remove"> x </button>
     </section>
 </template>
 
-<button name="add"> + </button>
+<button name="add"> &#10010; </button>
 <div>
 
 </div>

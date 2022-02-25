@@ -14,9 +14,11 @@ const TEMPLATE = `
     width: 100vw;
     box-sizing: border-box;
 }
-h1 {
+/* note: ::slotted(h1) does not work because ::slotted only works on top-level slotted things */
+h1, ::slotted(h1) {
     font-size: 3em;
     font-weight: normal;
+    margin-top: 0;
 }
 ul {
     list-style: none;
@@ -46,7 +48,9 @@ nav, main {
         <li><a href="#slideshow/" i18n="slideshow"></a></li>
     </ul>
 </nav>
-<main></main>
+<main>
+    <slot></slot>
+</main>
 <${DemoFavoriteImages.tag}></${DemoFavoriteImages.tag}>
 `;
 
@@ -89,6 +93,8 @@ class DemoMain extends HTMLElement {
     connectedCallback() {
         this.shadowRoot.innerHTML = TEMPLATE;
         this.main = this.shadowRoot.querySelector( 'main' );
+
+        this.setSlotContent();
 
         const remover = helper.safeEventListener( document, CUSTOM_EVENT.VIEW_CHANGE, e => {
             const { viewInfo } = e.detail;
@@ -169,6 +175,20 @@ class DemoMain extends HTMLElement {
         this.main.append( ...children );
     }
 
+    /** Sets the slot content.
+     *
+     */
+    setSlotContent() {
+        // the "slot content" is children of this element not in the shadowRoot
+        // this removes the message "You are using an unsupported browser"
+        while ( this.firstChild ) {
+            this.firstChild.remove();
+        }
+        // this puts a Sign In form into the slot
+        const signIn = new DemoSignIn();
+        this.append( signIn );
+    }
+
     /** Displays an error in the main view.
      *
      * @param e {Error} the error being displayed
@@ -178,8 +198,9 @@ class DemoMain extends HTMLElement {
             this.main.firstChild.remove();
         }
         if ( e.message === 'error.401' ) {
-            const signIn = new DemoSignIn();
-            this.main.append( signIn );
+            // the "slot content" (direct children) will "pop back in"
+            // if you remove main's children and put a slot back into main
+            this.main.append( document.createElement( 'slot' ) );
         } else {
             const error = new DemoError();
             error.messageKey = e.message;
